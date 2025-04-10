@@ -7,6 +7,8 @@ function Matching() {
   const { playerType } = useParams(); // Get player type (moving or stationary) from URL
   const [match, setMatch] = useState(null);
   const [timeLeft, setTimeLeft] = useState(180); // 3 minutes (180 seconds)
+  const [showRating, setShowRating] = useState(false); // State to toggle rating form
+  const [rating, setRating] = useState({ enjoyment: 0, depth: 0, wouldChatAgain: false }); // Rating data
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,8 +16,9 @@ function Matching() {
 
     // Fetch the matched player
     const fetchMatch = async () => {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'; // Fallback to default URL
       try {
-        const response = await fetch(`/api/match/${playerType}`);
+        const response = await fetch(`${backendUrl}/api/match/${playerType}`); // Use backend URL
         console.log(`API response status: ${response.status}`); // Debugging statement
 
         const contentType = response.headers.get('content-type');
@@ -61,8 +64,9 @@ function Matching() {
   }, [timeLeft]);
 
   const fetchNextMatch = async () => {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'; // Fallback to default URL
     try {
-      const response = await fetch(`/api/match/${playerType}`);
+      const response = await fetch(`${backendUrl}/api/match/${playerType}`); // Use backend URL
       console.log(`Next match API response status: ${response.status}`); // Debugging statement
 
       const text = await response.text(); // Read the response as text
@@ -90,6 +94,33 @@ function Matching() {
     }
   };
 
+  const handleRatingChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setRating({ ...rating, [name]: type === 'checkbox' ? checked : value });
+  };
+
+  const submitRating = async () => {
+    try {
+      const response = await fetch('/api/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...rating, ratedPlayerId: match.id }),
+      });
+      if (response.ok) {
+        console.log('Rating submitted successfully.');
+        setShowRating(false);
+        setMatch(null); // Clear current match
+        setTimeLeft(180); // Reset timer
+        fetchNextMatch(); // Fetch the next match
+      } else {
+        alert('Failed to submit rating. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      alert('An error occurred while submitting the rating.');
+    }
+  };
+
   if (!match) {
     console.log('No match data available yet.'); // Debugging statement
     return <div>Loading match...</div>;
@@ -97,12 +128,33 @@ function Matching() {
 
   return (
     <div>
-      {playerType === 'moving' ? (
-        <MovingParticipant match={match} timeLeft={timeLeft} />
+      {showRating ? (
+        <div>
+          <h2>Rate Your Conversation</h2>
+          <label>
+            Enjoyment:
+            <input type="number" name="enjoyment" min="1" max="5" onChange={handleRatingChange} />
+          </label>
+          <label>
+            Depth:
+            <input type="number" name="depth" min="1" max="5" onChange={handleRatingChange} />
+          </label>
+          <label>
+            Would Chat Again:
+            <input type="checkbox" name="wouldChatAgain" onChange={handleRatingChange} />
+          </label>
+          <button onClick={submitRating}>Submit Rating</button>
+        </div>
       ) : (
-        <StationaryParticipant match={match} timeLeft={timeLeft} />
+        <>
+          {playerType === 'moving' ? (
+            <MovingParticipant match={match} timeLeft={timeLeft} />
+          ) : (
+            <StationaryParticipant match={match} timeLeft={timeLeft} />
+          )}
+          <button onClick={() => setShowRating(true)}>End Conversation</button>
+        </>
       )}
-      <button onClick={() => navigate('/')}>End Conversation</button>
     </div>
   );
 }

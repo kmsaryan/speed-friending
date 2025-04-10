@@ -19,16 +19,28 @@ function PlayerRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    if (response.ok) {
-      console.log('Registration successful, redirecting to post-registration page.'); // Debugging statement
-      navigate('/post-registration'); // Updated path
-    } else {
-      alert('Registration failed. Please try again.');
+    console.log('Submitting registration form:', formData); // Log form data
+
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'; // Fallback to default URL
+
+    try {
+      const response = await fetch(`${backendUrl}/api/register`, { // Use backend URL
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        console.log('Registration successful, redirecting to post-registration page.'); // Log success
+        navigate('/post-registration');
+      } else {
+        const errorData = await response.json();
+        console.error('Registration failed:', errorData); // Log error response
+        alert(errorData.error || 'Registration failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during registration:', error); // Log network or other errors
+      alert('An error occurred during registration. Please try again.');
     }
   };
 

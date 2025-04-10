@@ -108,6 +108,7 @@ speed-friending/
 - **Dynamic Matching**: Players are matched randomly while avoiding immediate re-matches.
 - **Conversation Timer**: Each interaction is time-limited to ensure quick and engaging conversations.
 - **Player Roles**: Players can choose to be stationary or moving participants.
+- **Rating System**: After each interaction, players can rate their experience based on enjoyment, depth, and willingness to chat again.
 - **Database Integration**: Player data, matches, and ratings are stored in an SQLite database.
 
 ---

@@ -1,4 +1,4 @@
-CREATE TABLE players (
+CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     gender TEXT,
@@ -6,7 +6,7 @@ CREATE TABLE players (
     preferences TEXT
 );
 
-CREATE TABLE ratings (
+CREATE TABLE IF NOT EXISTS ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id INTEGER NOT NULL,
     rated_player_id INTEGER NOT NULL,
@@ -17,11 +17,17 @@ CREATE TABLE ratings (
     FOREIGN KEY (rated_player_id) REFERENCES players(id)
 );
 
-CREATE TABLE matches (
+CREATE TABLE IF NOT EXISTS matches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id INTEGER NOT NULL,
     matched_player_id INTEGER NOT NULL,
     round INTEGER NOT NULL,
     FOREIGN KEY (player_id) REFERENCES players(id),
     FOREIGN KEY (matched_player_id) REFERENCES players(id)
+);
+
+CREATE TABLE IF NOT EXISTS admins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
 );
