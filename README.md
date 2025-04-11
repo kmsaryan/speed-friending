@@ -82,8 +82,11 @@ speed-friending/
 4. Configure environment variables:
    - Create a `.env` file in the root directory:
      ```plaintext
-     DATABASE_URL=./speed-friending.sqlite
-     PORT=3001
+      DATABASE_URL=./speed-friending.sqlite
+      PORT=5000
+      FRONTEND_URL=http://localhost:3000
+      REACT_APP_BACKEND_URL=http://localhost:5000
+
      ```
 
 5. Start the backend server:
