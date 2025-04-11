@@ -1,39 +1,88 @@
+/* General Styles */
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f9f9f9;
+  background-color: #f0f4f8; /* Light gray-blue background */
+  color: #333; /* Dark gray text */
 }
 
 h1 {
   text-align: center;
-  color: #333;
+  color: #2c3e50; /* Dark blue-gray */
+  margin-top: 20px;
 }
 
 form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
   max-width: 400px;
   margin: 20px auto;
   padding: 20px;
-  background: #fff;
+  background: #ffffff; /* White background */
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 input, textarea, button {
   width: 100%;
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #dfe6e9; /* Light gray border */
   border-radius: 4px;
+  font-size: 16px;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #3498db; /* Light blue border on focus */
+  box-shadow: 0 0 4px rgba(52, 152, 219, 0.5);
 }
 
 button {
-  background-color: #007bff;
+  background-color: #3498db; /* Light blue */
   color: white;
   border: none;
   cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #2980b9; /* Darker blue */
+}
+
+/* Centering Content */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* Buttons Section */
+button-group {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Additional Styling for Admin Page */
+.admin-page {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.admin-page h1 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.admin-page button {
+  width: 48%;
 }
