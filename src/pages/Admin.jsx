@@ -47,6 +47,25 @@ function Admin() {
     }
   };
 
+  const handleClearPlayers = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/clear-players`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+      if (response.ok) {
+        setMessage('Player data cleared successfully.');
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.error || 'Failed to clear player data.');
+      }
+    } catch (error) {
+      console.error('Error clearing player data:', error);
+      setMessage('An error occurred. Please try again.');
+    }
+  };
+
   return (
     <div>
       <h1>Admin Page</h1>
@@ -66,6 +85,7 @@ function Admin() {
       />
       <button onClick={handleLogin}>Login</button>
       <button onClick={handleClearDatabase}>Clear Database</button>
+      <button onClick={handleClearPlayers}>Clear Player Data</button>
       <p>{message}</p>
     </div>
   );

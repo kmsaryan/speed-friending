@@ -163,6 +163,33 @@ app.post('/api/admin/clear', (req, res) => {
   });
 });
 
+// Endpoint to clear player data
+app.post('/api/admin/clear-players', (req, res) => {
+  const { username, password } = req.body;
+
+  // Authenticate admin
+  db.get('SELECT * FROM admins WHERE username = ?', [username], async (err, admin) => {
+    if (err) {
+      console.error('Database error during admin authentication:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!admin || !(await bcrypt.compare(password, admin.password))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Clear player data
+    db.serialize(() => {
+      db.run('DELETE FROM players', (err) => {
+        if (err) {
+          console.error('Error clearing players:', err.message);
+          return res.status(500).json({ error: 'Failed to clear player data' });
+        }
+        res.status(200).json({ message: 'Player data cleared successfully' });
+      });
+    });
+  });
+});
+
 const PORT = process.env.PORT || 3000; // Use PORT from .env or default to 3000
 
 app.listen(PORT, () => {
