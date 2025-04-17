@@ -103,6 +103,11 @@ app.get('/api/match/:playerType', (req, res) => {
 // Endpoint to submit ratings
 app.post('/api/rate', (req, res) => {
   const { playerId, ratedPlayerId, enjoyment, depth, wouldChatAgain } = req.body;
+
+  if (!playerId || !ratedPlayerId || enjoyment === undefined || depth === undefined || wouldChatAgain === undefined) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
   db.run(
     `INSERT INTO ratings (player_id, rated_player_id, enjoyment, depth, would_chat_again) 
      VALUES (?, ?, ?, ?, ?)`,

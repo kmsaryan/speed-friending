@@ -96,11 +96,12 @@ function Matching() {
   };
 
   const submitRating = async () => {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'; // Fallback to default URL
     try {
-      const response = await fetch('/api/rate', {
+      const response = await fetch(`${backendUrl}/api/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...rating, ratedPlayerId: match.id }),
+        body: JSON.stringify({ ...rating, playerId: match.id, ratedPlayerId: match.id }),
       });
       if (response.ok) {
         console.log('Rating submitted successfully.');
@@ -110,7 +111,9 @@ function Matching() {
         setIsTimerRunning(false); // Stop the timer
         fetchNextMatch(); // Fetch the next match
       } else {
-        alert('Failed to submit rating. Please try again.');
+        const errorData = await response.json();
+        console.error('Error submitting rating:', errorData);
+        alert(errorData.error || 'Failed to submit rating. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting rating:', error);
