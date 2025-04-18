@@ -1,4 +1,4 @@
-@import './colors.css';
+@import './global.css';
 
 .registration-frame {
   margin: auto;
@@ -166,26 +166,7 @@ form button:hover {
   box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.2);
 }
 
-.submit-button {
-  width: 100%;
-  padding: 14px;
-  background-color: #66FCF1; /* Bright teal for the button */
-  color: #0B0C10; /* Dark text on light button */
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-top: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 252, 241, 0.3);
-}
-
-.submit-button:hover {
-  background-color: #45A29E; /* Slightly darker teal on hover */
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 252, 241, 0.4);
-}
+/* Removed submit-button styles as global button classes are now used */
 
 /* Responsive adjustments */
 @media (max-width: 600px) { /* Increased from 550px for better mobile experience */

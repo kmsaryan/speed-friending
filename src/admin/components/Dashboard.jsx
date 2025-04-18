@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/Dashboard.css';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import AdminApiService from '../services/AdminApiService';
 

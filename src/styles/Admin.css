@@ -1,15 +1,6 @@
-/* Admin Dashboard Styles inspired by the provided color palette */
+@import './global.css';
 
-:root {
-  --dark-bg: #0B0C10;
-  --dark-accent: #1F2833;
-  --gray: #C5C6C7;
-  --teal-light: #66FCF1;
-  --teal-dark: #45A29E;
-  --danger: #e74c3c;
-  --warning: #f39c12;
-  --success: #2ecc71;
-}
+/* Admin Dashboard Styles */
 
 /* Login Page */
 .admin-login {
@@ -628,25 +619,9 @@ button:disabled {
     margin-left: 0;
     padding: 15px;
   }
-  
-  .stat-cards {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .charts-container {
-    flex-direction: column;
-  }
-  
-  .player-stats, .rating-stats {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 480px) {
-  .stat-cards {
-    grid-template-columns: 1fr;
-  }
-  
   .admin-header {
     flex-direction: column;
     align-items: flex-start;

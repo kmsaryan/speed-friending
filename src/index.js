@@ -5,6 +5,7 @@ import './styles.css';
 import './styles/Home.css';
 import './styles/Matching.css';
 import './styles/TeamBattles.css';
+import './styles/global.css';
 import Home from './pages/Home';
 import Matching from './pages/Matching';
 import TeamBattles from './pages/TeamBattles';

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../styles/AdminAuth.css';
 import AdminApiService from '../services/AdminApiService';
 
 function AdminAuth({ onLogin, onMessage }) {

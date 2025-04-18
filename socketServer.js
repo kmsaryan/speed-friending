@@ -253,6 +253,15 @@ const initializeSocketServer = (server) => {
                               console.error(`[SOCKET LOG]: Error inserting match: ${err.message}`);
                             } else {
                               console.log(`[SOCKET LOG]: Match recorded with ID: ${this.lastID}`);
+                              
+                              // Broadcast match created event to admin panels
+                              if (global.io) {
+                                global.io.emit('match_created', { 
+                                  matchId: this.lastID,
+                                  player1Id: playerId, 
+                                  player2Id: match.id
+                                });
+                              }
                             }
                             
                             // Remove player from matching in progress
@@ -318,14 +327,16 @@ const initializeSocketServer = (server) => {
     socket.on("submit_rating", (ratingData) => {
       console.log(`[SOCKET LOG]: Rating submitted by socket ${socket.id}`, ratingData);
       
-      const socketData = socketToPlayer.get(socket.id);
-      if (!socketData) {
-        console.log(`[SOCKET LOG]: No player data found for socket ${socket.id}`);
+      // Get the player ID directly from the rating data
+      const playerId = ratingData.playerId;
+      const ratedPlayerId = ratingData.ratedPlayerId;
+      
+      if (!playerId) {
+        console.log(`[SOCKET LOG]: No player ID provided in rating data`);
         return;
       }
       
-      const { playerId } = socketData;
-      const { ratedPlayerId } = ratingData;
+      console.log(`[SOCKET LOG]: Setting player ${playerId} status to available after rating submission`);
       
       // Set current player status back to available
       if (statusColumnExists) {
@@ -334,6 +345,14 @@ const initializeSocketServer = (server) => {
             console.error(`[SOCKET LOG]: Error resetting player status: ${err.message}`);
           } else {
             console.log(`[SOCKET LOG]: Reset player ${playerId} status to available after rating`);
+            
+            // Notify the client that the status has been updated
+            socket.emit("rating_processed", { success: true, playerId });
+            
+            // If the admin panel is open, broadcast the updated player count
+            if (global.io) {
+              global.io.emit("player_status_updated");
+            }
           }
         });
       }
@@ -359,6 +378,45 @@ const initializeSocketServer = (server) => {
     socket.on("chat_message", ({ to, message }) => {
       console.log(`[SOCKET LOG]: Chat message from ${socket.id} to ${to}`, message);
       io.to(to).emit("chat_message", { from: socket.id, message });
+    });
+
+    // Handle timer controls
+    socket.on("timer_control", (data) => {
+      const { matchId, action, timeLeft } = data;
+      console.log(`[SOCKET LOG]: Timer control from ${socket.id}. Action: ${action}, Match: ${matchId}`);
+      
+      // First get both players involved in this match
+      db.get(
+        'SELECT player_id, matched_player_id FROM matches WHERE id = ?',
+        [matchId],
+        (err, match) => {
+          if (err || !match) {
+            console.error(`[SOCKET LOG]: Error getting match for timer: ${err?.message || 'Match not found'}`);
+            return;
+          }
+          
+          // Find sockets for both players
+          let player1Socket = null;
+          let player2Socket = null;
+          
+          for (const [socketId, data] of socketToPlayer.entries()) {
+            if (data.playerId === match.player_id) {
+              player1Socket = socketId;
+            }
+            if (data.playerId === match.matched_player_id) {
+              player2Socket = socketId;
+            }
+          }
+          
+          // Broadcast the timer action to the other player
+          if (player1Socket && player1Socket !== socket.id) {
+            io.to(player1Socket).emit("timer_update", { action, timeLeft });
+          }
+          if (player2Socket && player2Socket !== socket.id) {
+            io.to(player2Socket).emit("timer_update", { action, timeLeft });
+          }
+        }
+      );
     });
 
     // Handle disconnection

@@ -1,0 +1,62 @@
+@import '../../styles/global.css';
+
+/* Login Page */
+.admin-login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--dark-bg);
+  color: var(--gray);
+}
+
+/* Login and Registration Forms */
+.login-card,
+.register-card {
+  background-color: var(--dark-accent);
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.login-card h2,
+.register-card h2 {
+  color: var(--teal-light);
+  margin-top: 0;
+  margin-bottom: 30px;
+  text-align: center;
+  font-size: 28px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.message {
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding: 10px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.message.error {
+  background-color: rgba(231, 76, 60, 0.1);
+  border-left: 4px solid var(--danger);
+  color: var(--danger);
+}
+
+.message.success {
+  background-color: rgba(46, 204, 113, 0.1);
+  border-left: 4px solid var(--success);
+  color: var(--success);
+}

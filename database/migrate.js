@@ -77,16 +77,20 @@ async function migrateDatabase() {
                     }
                     
                     console.log('Status column added successfully to players table.');
-                    resolve();
+                    
+                    // Check ratings table next
+                    checkRatingsTable(db, resolve, reject);
                   });
                 } else {
                   console.log('Status column already exists in players table.');
-                  resolve();
+                  // Check ratings table next
+                  checkRatingsTable(db, resolve, reject);
                 }
               });
             } else {
               console.log('Players table does not exist yet. It will be created with the schema.');
-              resolve();
+              // Check ratings table next
+              checkRatingsTable(db, resolve, reject);
             }
           });
         });
@@ -106,6 +110,53 @@ async function migrateDatabase() {
       }
     });
   }
+}
+
+// New function to check and fix ratings table
+function checkRatingsTable(db, resolve, reject) {
+  console.log('Checking ratings table...');
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='ratings'", (err, table) => {
+    if (err) {
+      console.error('Error checking for ratings table:', err.message);
+      reject(err);
+      return;
+    }
+    
+    if (table) {
+      // Check if round column exists
+      db.all("PRAGMA table_info(ratings)", (err, columns) => {
+        if (err) {
+          console.error('Error checking ratings columns:', err.message);
+          reject(err);
+          return;
+        }
+        
+        const hasRoundColumn = columns.some(col => col.name === 'round');
+        
+        if (!hasRoundColumn) {
+          console.log('Round column missing, adding it to ratings table...');
+          
+          // Add round column to existing ratings table
+          db.run('ALTER TABLE ratings ADD COLUMN round INTEGER DEFAULT 1', (err) => {
+            if (err) {
+              console.error('Error adding round column to ratings table:', err.message);
+              reject(err);
+              return;
+            }
+            
+            console.log('Round column added successfully to ratings table.');
+            resolve();
+          });
+        } else {
+          console.log('Round column already exists in ratings table.');
+          resolve();
+        }
+      });
+    } else {
+      console.log('Ratings table does not exist yet. It will be created with the schema.');
+      resolve();
+    }
+  });
 }
 
 // Run the migration

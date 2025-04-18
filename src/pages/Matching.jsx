@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import socket from "../utils/socket";
+import "../styles/global.css"; // Replace colors.css import with global.css
 import "../styles/Matching.css";
 import StationaryParticipant from "../components/StationaryParticipant";
 import MovingParticipant from "../components/MovingParticipant";
@@ -19,6 +20,34 @@ function Matching() {
     depth: 3,
     wouldChatAgain: true
   });
+  const [matchId, setMatchId] = useState(null); // Add match ID state
+  
+  // Store player ID locally
+  const [playerId, setPlayerId] = useState(() => {
+    // Try to get playerId from localStorage if it exists
+    return localStorage.getItem('playerId') || null;
+  });
+
+  useEffect(() => {
+    // Listen for registered player ID if we don't have it
+    if (!playerId) {
+      const storedPlayerId = localStorage.getItem('playerId');
+      if (storedPlayerId) {
+        setPlayerId(storedPlayerId);
+        console.log("Retrieved player ID from storage:", storedPlayerId);
+      } else {
+        // Set up listener for player ID from registration
+        const handleRegistration = (e) => {
+          if (e.key === 'playerId' && e.newValue) {
+            setPlayerId(e.newValue);
+            console.log("Received player ID from storage event:", e.newValue);
+          }
+        };
+        window.addEventListener('storage', handleRegistration);
+        return () => window.removeEventListener('storage', handleRegistration);
+      }
+    }
+  }, [playerId]);
 
   useEffect(() => {
     socket.emit("find_match", playerType);
@@ -27,6 +56,12 @@ function Matching() {
     socket.on("match_found", (matchData) => {
       console.log("Match data received:", matchData);
       setMatch(matchData);
+      
+      // If the server provides a match ID, store it
+      if (matchData.matchId) {
+        setMatchId(matchData.matchId);
+      }
+      
       setMessage("Match found!");
       setLoading(false);
       setTimeLeft(180); // Reset timer when match is found
@@ -115,8 +150,37 @@ function Matching() {
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
 
+  // Add socket listener for timer updates from other player
+  useEffect(() => {
+    socket.on("timer_update", (data) => {
+      console.log("Received timer update:", data);
+      if (data.action === 'start') {
+        setTimerActive(true);
+        if (data.timeLeft) {
+          setTimeLeft(data.timeLeft);
+        }
+      } else if (data.action === 'pause') {
+        setTimerActive(false);
+      }
+    });
+    
+    return () => {
+      socket.off("timer_update");
+    };
+  }, []);
+
   const toggleTimer = () => {
-    setTimerActive(!timerActive);
+    const newTimerState = !timerActive;
+    setTimerActive(newTimerState);
+    
+    // If we have a match ID, broadcast the timer state to the other player
+    if (matchId) {
+      socket.emit("timer_control", {
+        matchId: matchId,
+        action: newTimerState ? 'start' : 'pause',
+        timeLeft: timeLeft
+      });
+    }
   };
 
   const handleRatingChange = (e) => {
@@ -131,9 +195,8 @@ function Matching() {
     if (!match) return;
     
     try {
-      // Get the player ID from socket mapping (we were using socket.id before)
-      const playerData = socketToPlayer?.get(socket.id);
-      const actualPlayerId = playerData ? playerData.playerId : socket.id;
+      // Use the locally stored playerId instead of trying to access socketToPlayer
+      const actualPlayerId = playerId || socket.id;
       
       console.log("Submitting rating with player ID:", actualPlayerId);
       
@@ -226,24 +289,36 @@ function Matching() {
       <h2 className="match-header">You've been matched!</h2>
       
       <div className="timer-controls">
-        <button onClick={toggleTimer} className={timerActive ? "pause-button" : "start-button"}>
-          {timerActive ? "Pause Timer" : "Start Interaction"}
-        </button>
+        {/* Only show timer controls for stationary players */}
+        {playerType === 'stationary' && (
+          <button onClick={toggleTimer} className={timerActive ? "btn-warning btn-rounded" : "btn-success btn-rounded"}>
+            {timerActive ? "Pause Timer" : "Start Interaction"}
+          </button>
+        )}
         <div className="timer-display">
           Time Left: {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
         </div>
       </div>
       
-      {/* Render the appropriate participant component based on player type */}
+      {/* Pass additional props to components */}
       {playerType === 'stationary' ? (
-        <StationaryParticipant match={match} timeLeft={timeLeft} />
+        <StationaryParticipant 
+          match={match} 
+          timeLeft={timeLeft}
+          timerActive={timerActive}
+          toggleTimer={toggleTimer}
+        />
       ) : (
-        <MovingParticipant match={match} timeLeft={timeLeft} />
+        <MovingParticipant 
+          match={match} 
+          timeLeft={timeLeft}
+          timerActive={timerActive}
+        />
       )}
       
       <button 
         onClick={retryMatch} 
-        className="retry-button"
+        className="btn-primary btn-rounded"
         disabled={timerActive}
       >
         Find New Match

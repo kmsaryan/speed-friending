@@ -1,4 +1,4 @@
-@import './colors.css';
+@import './global.css';
 
 .rating-container {
   display: flex;

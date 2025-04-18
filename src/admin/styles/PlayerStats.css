@@ -1,0 +1,32 @@
+@import '../../styles/global.css';
+
+/* Player Stats */
+.player-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgba(197, 198, 199, 0.1);
+  padding-bottom: 5px;
+}
+
+.stat-label {
+  color: var(--gray);
+}
+
+.stat-value {
+  color: white;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .player-stats {
+    grid-template-columns: 1fr;
+  }
+}

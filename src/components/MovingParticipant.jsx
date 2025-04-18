@@ -1,10 +1,12 @@
 //MovingParticipant.jsx
 // File: src/components/MovingParticipant.jsx
 import React from 'react';
+import '../styles/global.css'; // Replace colors.css import with global.css
 import '../styles/Participant.css';
 import walkIcon from '../asserts/walk.svg';
+import timerIcon from '../asserts/timer.svg'; // Add timer icon import
 
-function MovingParticipant({ match, timeLeft }) {
+function MovingParticipant({ match, timeLeft, timerActive }) {
   return (
     <div className="participant-container moving">
       <div className="participant-card">
@@ -28,6 +30,20 @@ function MovingParticipant({ match, timeLeft }) {
                 <p><strong>Find this person at table:</strong> {match.tableNumber || 'Table number not specified'}</p>
               </div>
             </div>
+          </div>
+        </div>
+        
+        <div className="timer-status-container">
+          <div className="timer-icon-container">
+            <img src={timerIcon} alt="Timer" className="timer-icon" />
+          </div>
+          <p className="timer-instruction">
+            The stationary player will control the timer for this conversation.
+          </p>
+          <div className="timer-status">
+            Timer Status: <span className={timerActive ? "status-active" : "status-inactive"}>
+              {timerActive ? "Active" : "Waiting to Start"}
+            </span>
           </div>
         </div>
 

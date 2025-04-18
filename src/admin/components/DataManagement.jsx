@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/DataManagement.css';
 import AdminApiService from '../services/AdminApiService';
 
 function DataManagement({ onRefresh, onMessage }) {

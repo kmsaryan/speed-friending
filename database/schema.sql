@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS ratings (
     enjoyment REAL, -- Rating for enjoyment (e.g., 4.5)
     depth REAL, -- Rating for depth of conversation (e.g., 3.5)
     would_chat_again BOOLEAN, -- Whether the player would chat again (1 = yes, 0 = no)
-    round INTEGER NOT NULL, -- The round in which the rating was given
+    round INTEGER NOT NULL DEFAULT 1, -- The round in which the rating was given (with default value)
     FOREIGN KEY (player_id) REFERENCES players(id),
     FOREIGN KEY (rated_player_id) REFERENCES players(id)
 );
@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS matches (
     player_id INTEGER NOT NULL,
     matched_player_id INTEGER NOT NULL,
     round INTEGER NOT NULL,
+    rated INTEGER DEFAULT 0, -- Flag to indicate if this match has been rated (0=no, 1=yes)
     FOREIGN KEY (player_id) REFERENCES players(id),
     FOREIGN KEY (matched_player_id) REFERENCES players(id)
 );
@@ -66,3 +67,15 @@ CREATE TABLE IF NOT EXISTS team_battles (
     FOREIGN KEY (team2_id) REFERENCES teams(id),
     FOREIGN KEY (winner_id) REFERENCES teams(id)
 );
+
+-- Create game_state table to track game status and current round
+CREATE TABLE IF NOT EXISTS game_state (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL DEFAULT 'stopped',
+    current_round INTEGER NOT NULL DEFAULT 1,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default game state if none exists
+INSERT OR IGNORE INTO game_state (id, status, current_round) 
+VALUES (1, 'stopped', 1);

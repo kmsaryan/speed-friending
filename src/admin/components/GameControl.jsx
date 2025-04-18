@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import '../styles/GameControl.css';
 import AdminApiService from '../services/AdminApiService';
 
 function GameControl({ gameStatus, round, onStatusChange, onRoundChange, onMessage }) {

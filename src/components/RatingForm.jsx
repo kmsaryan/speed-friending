@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/global.css';
 import '../styles/RatingForm.css';
 import ratingsIcon from '../asserts/ratings.svg';
 
@@ -66,7 +67,7 @@ const RatingForm = ({ match, ratings, onRatingChange, onSubmit }) => {
           </label>
         </div>
         
-        <button onClick={onSubmit} className="submit-rating">
+        <button onClick={onSubmit} className="btn-primary btn-rounded">
           Submit Rating
         </button>
       </div>

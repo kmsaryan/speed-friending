@@ -153,6 +153,24 @@ router.get('/admin/ratings', (req, res) => {
   );
 });
 
+// Get all players
+router.get('/admin/players', (req, res) => {
+  db.all(
+    `SELECT p.*, 
+            (SELECT COUNT(*) FROM matches m 
+             WHERE (m.player_id = p.id OR m.matched_player_id = p.id)) as interaction_count 
+     FROM players p
+     ORDER BY p.id`,
+    (err, players) => {
+      if (err) {
+        console.error('Database error fetching players:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.status(200).json(players);
+    }
+  );
+});
+
 // Clear all data
 router.post('/admin/clear', (req, res) => {
   db.serialize(() => {

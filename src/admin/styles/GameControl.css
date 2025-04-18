@@ -1,0 +1,74 @@
+@import '../../styles/global.css';
+
+/* Control Cards */
+.control-card {
+  background-color: var(--dark-accent);
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.control-card h3 {
+  color: var(--teal-light);
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.control-card p {
+  color: var(--gray);
+  margin-bottom: 20px;
+}
+
+/* Game Controls */
+.game-controls, .round-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.game-status-display, .round-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-label, .round-label {
+  color: var(--gray);
+}
+
+.status-value.running {
+  color: var(--success);
+  font-weight: bold;
+}
+
+.status-value.stopped {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+.round-value {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.game-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .game-controls, .round-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .game-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

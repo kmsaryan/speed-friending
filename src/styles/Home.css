@@ -1,13 +1,6 @@
-@import './colors.css';
+@import './global.css';
 
-body {
-  font-family: 'Roboto', sans-serif;
-  background-color: var(--dark-bg);
-  color: var(--gray);
-  margin: 0;
-  padding: 0;
-}
-
+/* Component specific styles */
 .home-container {
   text-align: center;
   padding: 20px;
@@ -94,26 +87,6 @@ body {
 .concept-item p {
   color: var(--gray);
   line-height: 1.5;
-}
-
-.start-button {
-  background-color: var(--teal-light);
-  color: var(--dark-bg);
-  padding: 15px 40px;
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-top: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 252, 241, 0.3);
-}
-
-.start-button:hover {
-  background-color: var(--teal-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 252, 241, 0.4);
 }
 
 /* Responsive adjustments */

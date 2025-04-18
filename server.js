@@ -7,6 +7,7 @@ const cors = require('cors');
 const http = require('http');
 const path = require('path');
 const { execSync } = require('child_process');
+const db = require('./database'); // Add this import for database
 
 dotenv.config();
 
@@ -62,6 +63,23 @@ app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes);
 
 // Add new routes for enhanced admin functionality
+app.get('/api/admin/players', (req, res) => {
+  db.all(
+    `SELECT p.*, 
+            (SELECT COUNT(*) FROM matches m 
+             WHERE (m.player_id = p.id OR m.matched_player_id = p.id)) as interaction_count 
+     FROM players p
+     ORDER BY p.id`,
+    (err, players) => {
+      if (err) {
+        console.error('Database error fetching players:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.status(200).json(players);
+    }
+  );
+});
+
 app.get('/api/admin/matches', (req, res) => {
   const { round = 1 } = req.query;
   

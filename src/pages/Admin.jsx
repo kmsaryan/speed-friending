@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../styles/global.css'; 
 import '../styles/Admin.css';
 import AdminAuth from '../admin/components/AdminAuth';
 import Dashboard from '../admin/components/Dashboard';
@@ -6,6 +7,7 @@ import GameControl from '../admin/components/GameControl';
 import PlayerStats from '../admin/components/PlayerStats';
 import RatingsDashboard from '../admin/components/RatingsDashboard';
 import DataManagement from '../admin/components/DataManagement';
+import LiveMatchTable from '../admin/components/LiveMatchTable';
 
 // Import API Service
 import AdminApiService from '../admin/services/AdminApiService';
@@ -87,6 +89,12 @@ function Admin() {
             Game Control
           </li>
           <li 
+            className={activeTab === 'live-matches' ? 'active' : ''} 
+            onClick={() => setActiveTab('live-matches')}
+          >
+            Live Matching
+          </li>
+          <li 
             className={activeTab === 'player-stats' ? 'active' : ''} 
             onClick={() => setActiveTab('player-stats')}
           >
@@ -142,6 +150,10 @@ function Admin() {
             onRoundChange={setRound}
             onMessage={setMessage}
           />
+        )}
+        
+        {activeTab === 'live-matches' && (
+          <LiveMatchTable />
         )}
 
         {activeTab === 'player-stats' && (

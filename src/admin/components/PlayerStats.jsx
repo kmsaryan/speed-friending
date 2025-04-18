@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/PlayerStats.css';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import AdminApiService from '../services/AdminApiService';
 

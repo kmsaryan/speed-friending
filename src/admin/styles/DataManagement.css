@@ -1,0 +1,31 @@
+@import '../../styles/global.css';
+
+/* Data Management Cards */
+.data-card {
+  background-color: var(--dark-accent);
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  border-left: 4px solid transparent;
+}
+
+.data-card h3 {
+  color: var(--teal-light);
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.data-card p {
+  color: var(--gray);
+  margin-bottom: 20px;
+}
+
+.data-card.danger {
+  border-left-color: var(--danger);
+}
+
+.data-card.warning {
+  border-left-color: var(--warning);
+}

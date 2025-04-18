@@ -1,4 +1,4 @@
-@import './colors.css';
+@import './global.css';
 
 .team-battles-container {
   max-width: 1200px;

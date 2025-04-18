@@ -2,10 +2,12 @@
 // File: src/components/StationaryParticipant.jsx
 // This file defines the StationaryParticipant component, which displays the details of a stationary participant after they have been matched.
 import React from 'react';
+import '../styles/global.css'; // Replace colors.css import with global.css
 import '../styles/Participant.css';
 import deskIcon from '../asserts/Stationary.svg';
+import timerIcon from '../asserts/timer.svg'; // Add timer icon import
 
-function StationaryParticipant({ match, timeLeft }) {
+function StationaryParticipant({ match, timeLeft, timerActive, toggleTimer }) {
   return (
     <div className="participant-container stationary">
       <div className="participant-card">
@@ -26,6 +28,21 @@ function StationaryParticipant({ match, timeLeft }) {
               {match.preferences && <p><strong>Preferences:</strong> {match.preferences}</p>}
             </div>
           </div>
+        </div>
+
+        <div className="timer-controls-container">
+          <div className="timer-icon-container">
+            <img src={timerIcon} alt="Timer" className="timer-icon" />
+          </div>
+          <p className="timer-instruction">
+            As the stationary player, you control the conversation timer.
+          </p>
+          <button 
+            onClick={toggleTimer} 
+            className={timerActive ? "btn-warning btn-rounded timer-button" : "btn-success btn-rounded timer-button"}
+          >
+            {timerActive ? "Pause Timer" : "Start Interaction"}
+          </button>
         </div>
 
         <div className="instruction">

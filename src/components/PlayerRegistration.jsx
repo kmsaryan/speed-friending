@@ -2,6 +2,7 @@
 // File: src/components/PlayerRegistration.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/global.css'; // Replace colors.css import with global.css
 import '../styles/PlayerRegistration.css';
 import socket from '../utils/socket';
 import registerIcon from '../asserts/register.svg';
@@ -57,6 +58,9 @@ function PlayerRegistration() {
       if (response.ok) {
         const data = await response.json();
         console.log('Registration successful, player ID:', data.id);
+        
+        // Store player ID in localStorage for persistence across page refreshes
+        localStorage.setItem('playerId', data.id);
         
         // Register the player with the Socket.IO server
         socket.emit('register_player', {
@@ -145,7 +149,7 @@ function PlayerRegistration() {
           )}
         </div>
         
-        <button type="submit" className="submit-button">
+        <button type="submit" className="btn-primary btn-rounded">
           Register Now
         </button>
       </form>

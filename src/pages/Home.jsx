@@ -2,6 +2,7 @@
 // This file defines the Home component, which serves as the landing page for the application.
 import React, { useState, useEffect } from 'react';
 import PlayerRegistration from '../components/PlayerRegistration';
+import '../styles/global.css'; // Replace colors.css with global.css
 import '../styles/Home.css';
 
 // Import SVG icons properly
@@ -64,7 +65,7 @@ function Home() {
               </div>
             </div>
           </section>
-          <button onClick={() => setShowRegistration(true)} className="start-button">
+          <button onClick={() => setShowRegistration(true)} className="btn-primary btn-rounded">
             Join Now
           </button>
         </>

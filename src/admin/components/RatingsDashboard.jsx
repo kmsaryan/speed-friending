@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/RatingsDashboard.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import AdminApiService from '../services/AdminApiService';
 

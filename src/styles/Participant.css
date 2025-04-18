@@ -1,4 +1,4 @@
-@import './colors.css';
+@import './global.css';
 
 .participant-container {
   width: 100%;
@@ -147,4 +147,53 @@
 .participant-header h1 {
   margin: 0;
   color: var(--teal-light);
+}
+
+/* Timer Controls */
+.timer-controls-container, .timer-status-container {
+  background-color: rgba(40, 44, 52, 0.7);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid var(--teal-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.timer-icon-container {
+  margin-bottom: 10px;
+}
+
+.timer-icon {
+  width: 32px;
+  height: 32px;
+  filter: invert(80%) sepia(42%) saturate(527%) hue-rotate(130deg) brightness(105%) contrast(101%);
+}
+
+.timer-instruction {
+  margin-bottom: 15px;
+  color: var(--gray);
+  font-size: 14px;
+}
+
+.timer-button {
+  min-width: 180px;
+}
+
+.timer-status {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 50px;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.status-active {
+  color: var(--success);
+}
+
+.status-inactive {
+  color: var(--warning);
 }
