@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/PlayerRegistration.css';
 import socket from '../utils/socket';
+import registerIcon from '../asserts/register.svg';
 
 function PlayerRegistration() {
   const [formData, setFormData] = useState({
@@ -77,57 +78,76 @@ function PlayerRegistration() {
   };
 
   return (
-    <div className="registration-frame">
-      <h2>Player Registration</h2>
-      <p>Sign up to participate in speed friending.</p>
+    <div className="registration-container">
+      <div className="registration-header">
+        <img src={registerIcon} alt="Register" className="registration-icon" />
+        <h2>Player Registration</h2>
+      </div>
+      <p>Sign up to participate in Speed Friending.</p>
       {warning && <p className="warning">{warning}</p>}
-      <form onSubmit={handleSubmit}>
+      
+      <form onSubmit={handleSubmit} className="dark-form">
         <div className="form-grid">
-          <label>
-            Name
-            <input name="name" placeholder="Enter your name" onChange={handleChange} required />
-          </label>
-          <label>
-            Gender
-            <select name="gender" onChange={handleChange} required>
+          <div className="form-group">
+            <label>Name</label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter your name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Gender</label>
+            <select name="gender" value={formData.gender} onChange={handleChange} required>
               <option value="">Select your gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>
             </select>
-          </label>
-          <label>
-            Interests
-            <select name="interests" onChange={handleChange} required>
+          </div>
+          
+          <div className="form-group">
+            <label>Interests</label>
+            <select name="interests" value={formData.interests} onChange={handleChange} required>
               <option value="">Select your interests</option>
               <option value="Sports">Sports</option>
               <option value="Music">Music</option>
               <option value="Technology">Technology</option>
               <option value="Art">Art</option>
             </select>
-          </label>
-          <label>
-            Player Type
-            <select name="playerType" onChange={handleChange} required>
+          </div>
+          
+          <div className="form-group">
+            <label>Player Type</label>
+            <select name="playerType" value={formData.playerType} onChange={handleChange} required>
               <option value="">Select your player type</option>
               <option value="stationary">Stationary</option>
               <option value="moving">Moving</option>
             </select>
-          </label>
+          </div>
+          
           {formData.playerType === 'stationary' && (
-            <label className="full-width">
-              Table Number
+            <div className="form-group full-width">
+              <label>Table Number</label>
               <input
-                name="tableNumber"
                 type="number"
+                name="tableNumber"
                 placeholder="Enter your table number"
+                value={formData.tableNumber}
                 onChange={handleChange}
                 required
               />
-            </label>
+            </div>
           )}
         </div>
-        <button type="submit">Register Now</button>
+        
+        <button type="submit" className="submit-button">
+          Register Now
+        </button>
       </form>
     </div>
   );

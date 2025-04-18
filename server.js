@@ -1,5 +1,5 @@
 //server.js
-//Description: This code sets up an Express server with modular routes for a matchmaking application. It includes endpoints for player registration, fetching matches, submitting ratings, and team formation. The server handles errors gracefully and provides JSON responses for better client-side handling.
+//Description: This code sets up an Express server with modular routes for a matchmaking application. It includes endpoints for player registration, fetching matches, submitting ratings, team formation, and admin functionalities. The server handles errors gracefully and provides JSON responses for better client-side handling.
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
@@ -28,19 +28,40 @@ const io = initializeSocketServer(server);
 app.use(bodyParser.json());
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 
+// Add debugging for routes registration
+console.log('Registering API routes...');
+
 // Import modular routes
 const registerRoutes = require('./routes/register');
 const matchRoutes = require('./routes/match');
 const ratingsRoutes = require('./routes/ratings');
 const teamsRoutes = require('./routes/teams');
+const battlesRoutes = require('./routes/battles'); 
 const playerCountRoutes = require('./routes/playerCount');
+const adminRoutes = require('./routes/admin');
+
+// Print available routes in admin (for debugging)
+console.log('Available admin routes:');
+adminRoutes.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(`Route: ${r.route.path}`);
+  }
+});
 
 // Use modular routes
 app.use('/api', registerRoutes);
 app.use('/api', matchRoutes);
 app.use('/api', ratingsRoutes);
 app.use('/api', teamsRoutes);
+app.use('/api', battlesRoutes); 
 app.use('/api', playerCountRoutes);
+app.use('/api', adminRoutes);
+
+// Add a catch-all route handler for debugging
+app.use((req, res, next) => {
+  console.log(`[404]: Route not found: ${req.method} ${req.path}`);
+  res.status(404).json({ error: 'Route not found', path: req.path });
+});
 
 const PORT = process.env.PORT || 5000;
 

@@ -1,0 +1,323 @@
+@import './colors.css';
+
+.team-battles-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Roboto', sans-serif;
+  color: var(--gray);
+}
+
+.team-battles-container h1 {
+  color: var(--teal-light);
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 32px;
+}
+
+.team-battles-container h2 {
+  color: var(--white);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Battle cards grid */
+.battles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.battle-card {
+  background-color: var(--dark-accent);
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(102, 252, 241, 0.1);
+}
+
+.battle-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.battle-header {
+  background-color: rgba(102, 252, 241, 0.1);
+  color: var(--white);
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+.battle-id {
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--teal-light);
+}
+
+.battle-type {
+  font-size: 14px;
+  opacity: 0.9;
+  color: var(--gray);
+}
+
+.battle-teams-preview {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.team-preview {
+  flex: 1;
+  text-align: center;
+}
+
+.team-preview h3 {
+  color: var(--teal-light);
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.team-preview p {
+  color: var(--gray);
+  margin: 0;
+  font-size: 14px;
+}
+
+.vs {
+  font-weight: bold;
+  font-size: 20px;
+  color: var(--teal-dark);
+  padding: 0 15px;
+}
+
+.start-battle-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.start-battle-button:hover {
+  background-color: var(--teal-dark);
+}
+
+.start-battle-button:disabled {
+  background-color: rgba(149, 165, 166, 0.3);
+  cursor: not-allowed;
+}
+
+.battle-result {
+  background-color: rgba(31, 40, 51, 0.7);
+  padding: 15px;
+  text-align: center;
+  border-top: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+.battle-result p {
+  margin: 0;
+  font-weight: bold;
+  color: var(--teal-light);
+}
+
+/* Active battle styles */
+.active-battle {
+  background-color: var(--dark-accent);
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  padding: 30px;
+  margin-bottom: 40px;
+  border: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+.battle-teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px 0;
+}
+
+.battle-team {
+  flex: 1;
+  text-align: center;
+  padding: 20px;
+  background-color: rgba(31, 40, 51, 0.7);
+  border-radius: 10px;
+  max-width: 300px;
+}
+
+.battle-team h3 {
+  color: var(--teal-light);
+  margin-top: 0;
+}
+
+.battle-vs {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--teal-dark);
+  margin: 0 30px;
+}
+
+.winner-button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.winner-button.team1 {
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
+}
+
+.winner-button.team2 {
+  background-color: var(--teal-dark);
+  color: var(--white);
+}
+
+.winner-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.battle-instructions {
+  background-color: rgba(31, 40, 51, 0.7);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  border-left: 3px solid var(--teal-light);
+}
+
+.battle-instructions h3 {
+  color: var(--teal-light);
+  margin-top: 0;
+}
+
+.battle-instructions p {
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+/* Status states */
+.battle-card.in-progress {
+  border: 2px solid var(--warning);
+}
+
+.battle-card.completed {
+  border: 2px solid var(--success);
+}
+
+.battle-card.in-progress .battle-header {
+  background-color: rgba(243, 156, 18, 0.2);
+}
+
+.battle-card.completed .battle-header {
+  background-color: rgba(46, 204, 113, 0.2);
+}
+
+/* Empty state */
+.no-teams-message {
+  text-align: center;
+  padding: 30px;
+  background-color: var(--dark-accent);
+  border-radius: 10px;
+  margin-top: 30px;
+  border: 1px solid rgba(102, 252, 241, 0.1);
+}
+
+.no-teams-message h2 {
+  color: var(--teal-light);
+}
+
+.no-teams-message button {
+  margin-top: 20px;
+  padding: 12px 25px;
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.no-teams-message button:hover {
+  background-color: var(--teal-dark);
+  transform: translateY(-2px);
+}
+
+/* Loading and error states */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(197, 198, 199, 0.2);
+  border-top: 4px solid var(--teal-light);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: var(--danger);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 30px;
+  border-left: 4px solid var(--danger);
+}
+
+.error-message button {
+  margin-top: 15px;
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .battles-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .battle-teams {
+    flex-direction: column;
+  }
+  
+  .battle-team {
+    margin-bottom: 20px;
+    max-width: 100%;
+  }
+  
+  .battle-vs {
+    margin: 15px 0;
+  }
+}

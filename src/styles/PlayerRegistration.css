@@ -1,3 +1,5 @@
+@import './colors.css';
+
 .registration-frame {
   margin: auto;
   background-color: #f9f9f9;
@@ -25,12 +27,10 @@
 }
 
 form {
-  margin: 0 auto;
-  max-width: auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -38,9 +38,11 @@ form {
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px 30px; /* Horizontal and vertical spacing */
-  width: 100%;
+  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  gap: 25px 30px; /* Increased horizontal gap to 30px and vertical to 25px */
+  margin-bottom: 20px;
+  width: 100%; /* Ensure grid takes full container width */
+  box-sizing: border-box; /* Include padding and border in width calculation */
 }
 
 form label {
@@ -87,4 +89,153 @@ form button:hover {
 
 .full-width {
   grid-column: span 2; /* Make the element span across both columns */
+}
+
+.registration-container {
+  max-width: 550px; /* Increased from 500px to give more room */
+  margin: 0 auto;
+  padding: 30px;
+  background-color: #1F2833; /* Match the admin login background color */
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  color: #C5C6C7;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.registration-container h2 {
+  color: #66FCF1; /* Bright teal color for the title */
+  font-size: 2rem;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.registration-container p {
+  color: #C5C6C7;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.warning {
+  background-color: rgba(243, 156, 18, 0.2);
+  border-left: 4px solid #f39c12;
+  padding: 10px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.form-group {
+  margin-bottom: 0; /* Remove bottom margin as grid gap handles spacing */
+  width: 100%; /* Ensure each form group takes full width of its grid cell */
+  box-sizing: border-box; /* Include padding and border in width calculation */
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #C5C6C7;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid rgba(197, 198, 199, 0.3);
+  border-radius: 5px;
+  background-color: rgba(11, 12, 16, 0.7); /* Darker background for inputs */
+  color: white;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box; /* Include padding and border in width calculation */
+  max-width: 100%; /* Prevent overflow */
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #66FCF1;
+  box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.2);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 14px;
+  background-color: #66FCF1; /* Bright teal for the button */
+  color: #0B0C10; /* Dark text on light button */
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 252, 241, 0.3);
+}
+
+.submit-button:hover {
+  background-color: #45A29E; /* Slightly darker teal on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 252, 241, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) { /* Increased from 550px for better mobile experience */
+  .registration-container {
+    padding: 20px;
+    max-width: 100%;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr; /* Single column on small screens */
+    gap: 20px; /* Slightly smaller gap on mobile */
+  }
+  
+  .form-group.full-width {
+    grid-column: span 1; /* No need to span on single column layout */
+  }
+  
+  .registration-container h2 {
+    font-size: 1.8rem;
+  }
+}
+
+/* Dark form specific styling to match admin login */
+.dark-form {
+  background-color: transparent; /* Remove any background */
+  box-shadow: none;
+  padding: 0.5;
+  align-items: flex-start; /* Align items to the start */
+  margin: 0.5; /* Remove margin */
+  max-width: 100%; /* Prevent overflow */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Set color for the select dropdown options */
+.form-group select option {
+  background-color: #1F2833;
+  color: #C5C6C7;
+}
+
+.registration-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.registration-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+  filter: invert(80%) sepia(42%) saturate(527%) hue-rotate(130deg) brightness(105%) contrast(101%); /* Teal color for SVG */
 }

@@ -1,0 +1,150 @@
+@import './colors.css';
+
+.participant-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.participant-card {
+  background-color: var(--dark-accent);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(102, 252, 241, 0.1);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.participant-card h1 {
+  color: var(--teal-light);
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.participant-info {
+  margin-bottom: 25px;
+}
+
+.match-details {
+  display: flex;
+  align-items: flex-start;
+}
+
+.match-avatar {
+  width: 80px;
+  height: 80px;
+  background-color: var(--teal-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 34px;
+  font-weight: bold;
+  margin-right: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.match-data {
+  flex: 1;
+}
+
+.match-data h2 {
+  color: #000000; /* Black for maximum visibility */
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.match-data p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: #333333; /* Dark gray for better readability */
+  line-height: 1.5;
+}
+
+.match-data p strong {
+  color: #000000; /* Black for emphasis */
+  margin-right: 5px;
+  font-weight: bold;
+}
+
+.table-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(40, 44, 52, 0.7); /* Slightly darker background for contrast */
+  border-radius: 8px;
+  border-left: 4px solid #45A29E;
+}
+
+.table-info p {
+  margin: 5px 0;
+  color: #FFFFFF; /* Pure white for better visibility */
+  font-weight: 500;
+}
+
+.instruction {
+  background-color: rgba(40, 44, 52, 0.7);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 25px;
+  border-left: 4px solid #45A29E;
+}
+
+.instruction p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: #E0E0E0; /* Light gray for better visibility */
+  line-height: 1.5;
+}
+
+/* Different styling for stationary vs moving participants */
+.moving .participant-card {
+  border-top: 5px solid var(--teal-light);
+}
+
+.stationary .participant-card {
+  border-top: 5px solid var(--teal-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .match-details {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .match-avatar {
+    margin: 0 0 20px 0;
+  }
+}
+
+.participant-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.participant-icon {
+  width: 36px;
+  height: 36px;
+  margin-right: 15px;
+  filter: invert(80%) sepia(42%) saturate(527%) hue-rotate(130deg) brightness(105%) contrast(101%); /* Teal color for SVG */
+}
+
+.participant-header h1 {
+  margin: 0;
+  color: var(--teal-light);
+}

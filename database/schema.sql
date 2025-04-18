@@ -38,3 +38,31 @@ CREATE TABLE IF NOT EXISTS admins (
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL
 );
+
+-- Create a default admin user if none exists
+INSERT OR IGNORE INTO admins (username, password) 
+VALUES ('admin', '$2b$10$yVlq.b5yW7r9kAJ9oIQfBeY4WV3YFdMc0GwluM1PxoLUD9UMVwn2O');
+-- This is bcrypt hash for 'password' - change in production!
+
+CREATE TABLE IF NOT EXISTS teams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player1_id INTEGER NOT NULL,
+    player2_id INTEGER NOT NULL,
+    round INTEGER NOT NULL,
+    compatibility_score REAL,
+    battle_score INTEGER DEFAULT 0,
+    FOREIGN KEY (player1_id) REFERENCES players(id),
+    FOREIGN KEY (player2_id) REFERENCES players(id)
+);
+
+CREATE TABLE IF NOT EXISTS team_battles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    team1_id INTEGER NOT NULL,
+    team2_id INTEGER NOT NULL,
+    round INTEGER NOT NULL,
+    winner_id INTEGER,
+    battle_type TEXT,
+    FOREIGN KEY (team1_id) REFERENCES teams(id),
+    FOREIGN KEY (team2_id) REFERENCES teams(id),
+    FOREIGN KEY (winner_id) REFERENCES teams(id)
+);

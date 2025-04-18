@@ -1,3 +1,5 @@
+@import './colors.css';
+
 .container {
   text-align: center;
   margin-top: 50px;
@@ -37,40 +39,55 @@ button:hover {
   width: 80%;
   max-width: 500px;
   text-align: left;
+  flex: 1;
 }
 
 .match-details p {
   margin: 10px 0;
   font-size: 16px;
+  color: #333;
 }
 
 .match-details strong {
   color: #2980b9;
+  font-weight: bold;
+  font-size: 18px;
+  
+}
+
+.match-details h3 {
+  color: #ffffff; /* Change to white for better visibility */
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-weight: normal;
 }
 
 .matching-container {
   text-align: center;
   margin: 50px auto;
-  max-width: 600px;
+  max-width: 700px;
   padding: 0 20px;
+  color: var(--gray);
 }
 
 .match-header {
-  color: #2c3e50;
-  font-size: 28px;
+  color: var(--teal-light);
+  font-size: 2.2rem;
   margin-bottom: 30px;
 }
 
 .match-card {
-  background-color: white;
+  background-color: var(--dark-accent);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   padding: 30px;
   margin: 20px 0 30px;
   display: flex;
   align-items: center;
   text-align: left;
   animation: fadeIn 0.5s ease-out;
+  border: 1px solid rgba(102, 252, 241, 0.1);
 }
 
 @keyframes fadeIn {
@@ -81,24 +98,21 @@ button:hover {
 .match-avatar {
   width: 80px;
   height: 80px;
-  background-color: #3498db;
+  background-color: var(--teal-dark);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--white);
   font-size: 34px;
   font-weight: bold;
   margin-right: 20px;
   flex-shrink: 0;
-}
-
-.match-details {
-  flex: 1;
+  box-shadow: 0 4px 10px rgba(102, 252, 241, 0.2);
 }
 
 .match-details h3 {
-  color: #7f8c8d;
+  color: #ffffff; /* Change to white for better visibility */
   font-size: 16px;
   margin-top: 0;
   margin-bottom: 8px;
@@ -106,11 +120,12 @@ button:hover {
 }
 
 .match-name {
-  color: #2c3e50;
+  color: #66FCF1; /* Change to bright teal for better visibility */
   font-size: 24px;
   font-weight: bold;
   margin-top: 0;
   margin-bottom: 15px;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.3); /* Add subtle text shadow for better readability */
 }
 
 .match-info {
@@ -123,36 +138,38 @@ button:hover {
 .info-item {
   display: flex;
   align-items: baseline;
+  margin-bottom: 8px; /* Add spacing between items for better readability */
 }
 
 .info-label {
-  color: #7f8c8d;
+  color: #66FCF1; /* Bright teal for labels */
   font-weight: bold;
   margin-right: 8px;
   min-width: 90px;
 }
 
 .info-value {
-  color: #34495e;
+  color: #ffffff; /* White color for values */
 }
 
 .retry-button {
-  background-color: #3498db;
-  color: white;
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
   border: none;
-  padding: 12px 25px;
+  padding: 12px 30px;
   font-size: 16px;
-  border-radius: 25px;
+  border-radius: 30px;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
   margin-top: 20px;
-  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+  box-shadow: 0 4px 15px rgba(102, 252, 241, 0.3);
 }
 
 .retry-button:hover {
-  background-color: #2980b9;
+  background-color: var(--teal-dark);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 252, 241, 0.4);
 }
 
 .retry-button:active {
@@ -160,8 +177,10 @@ button:hover {
 }
 
 .retry-button:disabled {
-  background-color: #bdc3c7;
+  background-color: rgba(149, 165, 166, 0.3);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .loading-spinner {
@@ -174,8 +193,8 @@ button:hover {
 .spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3498db;
+  border: 5px solid rgba(197, 198, 199, 0.2);
+  border-top: 5px solid var(--teal-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -187,7 +206,81 @@ button:hover {
 }
 
 .no-match {
-  color: #7f8c8d;
+  color: var(--gray);
   font-size: 18px;
   margin: 40px 0;
+  background-color: var(--dark-accent);
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 4px solid var(--warning);
+}
+
+.timer-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.timer-display {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 15px 0;
+  color: var(--teal-light);
+  background-color: var(--dark-accent);
+  padding: 15px 30px;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+.start-button, .pause-button {
+  padding: 12px 30px;
+  font-size: 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.start-button {
+  background-color: var(--success);
+  color: var(--white);
+}
+
+.start-button:hover {
+  background-color: #2ecc71;
+  transform: translateY(-2px);
+}
+
+.pause-button {
+  background-color: var(--warning);
+  color: var(--white);
+}
+
+.pause-button:hover {
+  background-color: #e67e22;
+  transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .match-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .match-avatar {
+    margin: 0 auto 20px;
+  }
+  
+  .info-item {
+    flex-direction: column;
+  }
+  
+  .info-label {
+    margin-bottom: 5px;
+  }
 }
