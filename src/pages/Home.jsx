@@ -9,7 +9,6 @@ import timerIcon from '../asserts/timer.svg';
 import registeration from '../asserts/register.svg';
 import rating from '../asserts/ratings.svg';
 
-
 function Home() {
   const [showRegistration, setShowRegistration] = React.useState(false);
 
