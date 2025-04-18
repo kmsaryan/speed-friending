@@ -1,96 +1,99 @@
 # Changelog
 
-## Initial Commit
+All notable changes to the Speed Friending project will be documented in this file.
+
+## [1.3.0] - 2025-04-18
+
+### Features
+- **Game Status Management**:
+  - Added game status checks and updates in the Matching component.
+  - Introduced AdminAuth component for admin login and registration functionality.
+  - Developed Dashboard component for displaying player stats and game controls.
+  - Created DataManagement component for clearing various data types.
+  - Built GameControl component for managing game status and rounds.
+  - Added MatchManagement component for viewing and controlling matches.
+  - Created PlayerStats component for displaying player statistics.
+  - Developed RatingsDashboard component for displaying average ratings.
+  - Implemented AdminApiService for handling all admin-related API requests.
+
+### Improvements
+- **UI Enhancements**:
+  - Refactored styles to use a global color palette and removed deprecated color definitions.
+  - Updated styles for Admin, Home, Matching, Participant, Player Registration, Rating Form, and Team Battles components.
+  - Added consistent theming and responsive design across components.
+  - Introduced new styles for LiveMatchTable and other admin components.
+
+### Bug Fixes
+- Fixed rating logic in the Matching component.
+- Improved timer logic and added no-match handling.
+
+---
+
+## [1.2.0] - 2025-04-18
+
+### Features
+- **Matchmaking with Socket.IO**:
+  - Implemented real-time matchmaking functionality using Socket.IO.
+  - Added modular routes for player registration, matchmaking, player count, ratings, and team formation.
+  - Enhanced the Matching page to display match details and loading states.
+
+### Improvements
+- **Database Integration**:
+  - Added database migration script execution on server start.
+  - Updated player registration to include player type and table number.
+  - Improved error handling and logging throughout the application.
+
+### Bug Fixes
+- Fixed styling inconsistencies in the Matching interface.
+- Added loading indicators for better user experience.
+
+---
+
+## [1.1.0] - 2025-04-11
+
+### Features
+- **Admin Functionalities**:
+  - Added player data clearing functionality.
+  - Integrated bcrypt for password hashing.
+  - Implemented admin endpoints for managing players and matches.
+
+### Improvements
+- **Styling Updates**:
+  - Refactored styles for improved layout and consistency.
+  - Updated form and button styles.
+  - Added admin page styling.
+
+### Bug Fixes
+- Enhanced error handling and logging in Admin and Matching components.
+
+---
+
+## [1.0.0] - 2025-04-03
+
+### Features
+- **Initial Release**:
+  - Added player registration system.
+  - Implemented basic matchmaking functionality.
+  - Introduced rating system for player interactions.
+  - Developed admin functionalities for managing players and matches.
+
+### Technical Architecture
+- **Frontend**: React with React Router.
+- **Backend**: Express.js with Socket.IO.
+- **Database**: SQLite with migration support.
+- **Authentication**: Basic admin authentication with bcrypt.
+- **Environment Management**: dotenv for environment variables.
+- **Real-Time Updates**: Socket.IO for real-time matchmaking and chat.
+
+---
+
+## [0.1.0] - 2025-04-02
+
+### Features
 - **Project Setup**:
   - Initialized the Speed Friending project with React for the frontend and Express for the backend.
-  - Installed dependencies: `react`, `react-router-dom`, `express`, `sqlite3`, `bcrypt`, `dotenv`, and `cors`.
+  - Added environment configuration and npm ignore files.
   - Created the basic project structure:
     - `/src` for frontend components and pages.
     - `/database` for database schema.
     - `server.js` for backend logic.
-
----
-
-## Features Implemented
-
-### Frontend
-- **Home Page**:
-  - Displays a welcome message and a player registration form.
-- **Post-Registration Page**:
-  - Allows players to select their type: `Stationary` or `Moving`.
-- **Matching Page**:
-  - Dynamically matches players based on their type.
-  - Includes a timer for each interaction and a rating system.
-- **Admin Page**:
-  - Provides admin login functionality.
-  - Allows admins to clear player data and reset the database.
-
-### Backend
-- **Player Registration**:
-  - Players can register with their name, gender, interests, and preferences.
-- **Dynamic Matching**:
-  - Matches players based on their type while avoiding immediate re-matches.
-- **Rating System**:
-  - Players can rate their interactions after each match.
-- **Admin Operations**:
-  - Admins can log in and clear player data or reset the database.
-
----
-
-## Database Schema
-
-### Tables
-- **`players`**:
-  - Stores player details (name, gender, interests, preferences).
-- **`ratings`**:
-  - Stores ratings submitted by players after interactions.
-- **`matches`**:
-  - Tracks matches between players to avoid immediate re-matches.
-- **`admins`**:
-  - Stores admin credentials (username and hashed password).
-
-### Schema File
-- Located at `/database/schema.sql`.
-- Automatically creates tables if they do not exist.
-
----
-
-## Backend Functionality
-
-### Express Server
-- Handles API requests for player registration, matching, rating, and admin operations.
-- Uses `dotenv` for environment variables and `cors` for cross-origin requests.
-
-### Endpoints
-- **Player Operations**:
-  - `/api/register`: Registers a new player.
-  - `/api/match/:playerType`: Fetches a match for a player based on their type.
-  - `/api/rate`: Submits a rating for an interaction.
-- **Admin Operations**:
-  - `/api/admin/login`: Authenticates admin credentials.
-  - `/api/admin/clear`: Clears all data from the database.
-  - `/api/admin/clear-players`: Clears only player data.
-
----
-
-## Admin Page and Database Maintenance
-
-### Admin Page
-- Accessible at `/admin`.
-- Features:
-  - Login form for admin authentication.
-  - Buttons for clearing the database or player data.
-  - Displays success or error messages based on operations.
-
-### Database Maintenance
-- Admins can log in to manage the database.
-- Operations include:
-  - Clearing all data (`players`, `matches`, `ratings`).
-  - Clearing only player data (`players` table).
-
----
-
-## Future Enhancements
-- Add analytics to track player engagement and interaction statistics.
-- Improve the admin dashboard with more detailed controls and insights.
-- Enhance the rating system with additional metrics.
