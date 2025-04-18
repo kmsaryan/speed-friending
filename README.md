@@ -23,8 +23,11 @@ Speed Friending is a structured social interaction game where players are matche
    - Each round has a fixed time limit (e.g., 3 minutes).
    - Players interact during this time, after which the next match is fetched.
 
-5. **Rating System** (Future Scope):
+5. **Rating System**:
    - Players can rate their interactions based on enjoyment, depth, and willingness to chat again.
+
+6. **Admin Dashboard**:
+   - Admins can manage the game, view player statistics, track live matches, and clear data.
 
 ---
 
@@ -34,23 +37,45 @@ Speed Friending is a structured social interaction game where players are matche
 speed-friending/
 ├── database/
 │   ├── schema.sql                # SQLite database schema
+│   ├── migrate.js                # Migration script for database updates
 ├── public/
 │   ├── index.html                # Entry point for the React app
 ├── src/
-│   ├── components/
-│   │   ├── MovingParticipant.jsx # Component for moving participants
-│   │   ├── StationaryParticipant.jsx # Component for stationary participants
-│   ├── pages/
-│   │   ├── Home.jsx              # Landing page with player registration
-│   │   ├── PostRegistration.jsx  # Page for player type selection
-│   │   ├── Matching.jsx          # Page for matching and conversation flow
-│   ├── styles.css                # Global styles for the app
-│   ├── index.js                  # React app entry point
-├── .env                          # Environment variables
-├── .gitignore                    # Files to ignore in Git
-├── package.json                  # Project dependencies and scripts
+│   ├── admin/
+│   │   ├── components/           # Admin dashboard components
+│   │   ├── services/             # Admin API service
+│   │   ├── styles/               # Admin-specific styles
+│   ├── asserts/                  # SVG assets for icons
+│   ├── components/               # Shared components
+│   ├── pages/                    # Main pages of the app
+│   ├── styles/                   # Global and component-specific styles
+│   ├── utils/                    # Utility functions (e.g., socket connection)
+├── tools/
+│   ├── create-admin.js           # Script to create admin users
 ├── server.js                     # Express server for backend APIs
+├── socketServer.js               # Socket.IO server for real-time features
+├── package.json                  # Project dependencies and scripts
+├── README.md                     # Project documentation
 ```
+
+---
+
+## Features
+
+### Player Features
+- **Dynamic Matching**: Players are matched randomly while avoiding immediate re-matches.
+- **Conversation Timer**: Each interaction is time-limited to ensure quick and engaging conversations.
+- **Player Roles**: Players can choose to be stationary or moving participants.
+- **Rating System**: After each interaction, players can rate their experience based on enjoyment, depth, and willingness to chat again.
+
+### Admin Features
+- **Game Control**: Start, stop, and advance game rounds.
+- **Player Statistics**: View statistics such as total players, matched players, and available players.
+- **Live Match Tracking**: Monitor ongoing matches in real-time.
+- **Data Management**: Clear player, match, and rating data as needed.
+
+### Real-Time Features
+- **Socket.IO Integration**: Enables real-time updates for matches, timer synchronization, and game status changes.
 
 ---
 
@@ -59,6 +84,7 @@ speed-friending/
 ### Prerequisites
 - Node.js (v16 or higher)
 - npm (v8 or higher)
+- SQLite
 
 ### Steps
 1. Clone the repository:
@@ -79,35 +105,58 @@ speed-friending/
      sqlite3 speed-friending.sqlite < database/schema.sql
      ```
 
-4. Configure environment variables:
-   - Create a `.env` file in the root directory:
-     ```plaintext
-      DATABASE_URL=./speed-friending.sqlite
-      PORT=5000
-      FRONTEND_URL=http://localhost:3000
-      REACT_APP_BACKEND_URL=http://localhost:5000
-
-     ```
-
-5. Start the backend server:
+4. Run the migration script:
    ```bash
-   node server.js
+   npm run migrate
    ```
 
-6. Start the frontend development server:
+5. Create an admin user:
+   ```bash
+   node tools/create-admin.js
+   ```
+
+6. Configure environment variables:
+   - Create a `.env` file in the root directory:
+     ```plaintext
+     DATABASE_URL=./speed-friending.sqlite
+     PORT=5000
+     FRONTEND_URL=http://localhost:3000
+     REACT_APP_BACKEND_URL=http://localhost:5000
+     ```
+
+7. Start the backend server:
+   ```bash
+   npm run server
+   ```
+
+8. Start the frontend development server:
    ```bash
    npm start
    ```
 
-7. Open the app in your browser:
+9. Open the app in your browser:
    ```
    http://localhost:3000
    ```
 
 ---
 
-## Database Setup and Operations
+## Database Schema and Management
 
+### Tables
+- **`players`**:
+  - Stores player details (name, gender, interests, preferences, type, table number, status).
+- **`ratings`**:
+  - Stores ratings submitted by players after interactions.
+- **`matches`**:
+  - Tracks matches between players to avoid immediate re-matches.
+- **`admins`**:
+  - Stores admin credentials (username and hashed password).
+- **`teams`**:
+  - Stores team information for team battles.
+- **`game_state`**:
+  - Tracks the current game status and round.
+  
 ### **Initialize the Database**
 Run the following command to initialize the database using the schema:
 ```bash
@@ -150,24 +199,13 @@ sqlite3 speed-friending.sqlite < database/schema.sql
    ```bash
    .exit
    ```
-
----
-
-## Features
-
-- **Dynamic Matching**: Players are matched randomly while avoiding immediate re-matches.
-- **Conversation Timer**: Each interaction is time-limited to ensure quick and engaging conversations.
-- **Player Roles**: Players can choose to be stationary or moving participants.
-- **Rating System**: After each interaction, players can rate their experience based on enjoyment, depth, and willingness to chat again.
-- **Database Integration**: Player data, matches, and ratings are stored in an SQLite database.
-
 ---
 
 ## Future Enhancements
 
-- **Rating System**: Allow players to rate their interactions.
-- **Admin Dashboard**: Provide an interface for managing players and matches.
-- **Analytics**: Track player engagement and interaction statistics.
+- **Analytics**: Add detailed analytics to track player engagement and interaction statistics.
+- **Enhanced Matching**: Improve the matching algorithm to consider player preferences and ratings.
+- **Mobile Support**: Optimize the UI for mobile devices.
 
 ---
 
@@ -182,3 +220,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - **React**: For building the frontend.
 - **Express**: For creating the backend APIs.
 - **SQLite**: For lightweight database management.
+- **Socket.IO**: For enabling real-time communication.
