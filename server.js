@@ -13,10 +13,14 @@ dotenv.config();
 // Run database migration before starting the server
 console.log('Running database migration...');
 try {
-  execSync('node ' + path.join(__dirname, 'database', 'migrate.js'), { stdio: 'inherit' });
+  const migrateScript = path.join(__dirname, 'database', 'migrate.js');
+  console.log(`Executing migration script at: ${migrateScript}`);
+  
+  execSync(`node ${migrateScript}`, { stdio: 'inherit' });
   console.log('Database migration completed successfully.');
 } catch (error) {
   console.error('Error running database migration:', error.message);
+  console.error('Continuing with server startup, but some features may not work correctly.');
 }
 
 const initializeSocketServer = require('./socketServer');
@@ -56,6 +60,115 @@ app.use('/api', teamsRoutes);
 app.use('/api', battlesRoutes); 
 app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes);
+
+// Add new routes for enhanced admin functionality
+app.get('/api/admin/matches', (req, res) => {
+  const { round = 1 } = req.query;
+  
+  db.all(
+    `SELECT m.id, m.player_id as player1_id, m.matched_player_id as player2_id, 
+            p1.name as player1_name, p2.name as player2_name,
+            p1.playerType as player1_type, p2.playerType as player2_type,
+            m.round
+     FROM matches m
+     JOIN players p1 ON m.player_id = p1.id
+     JOIN players p2 ON m.matched_player_id = p2.id
+     WHERE m.round = ?
+     ORDER BY m.id DESC`,
+    [round],
+    (err, matches) => {
+      if (err) {
+        console.error('Database error fetching matches:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.status(200).json(matches);
+    }
+  );
+});
+
+app.post('/api/admin/end-match/:id', (req, res) => {
+  const { id } = req.params;
+  
+  // Get match details first
+  db.get('SELECT player_id, matched_player_id FROM matches WHERE id = ?', [id], (err, match) => {
+    if (err) {
+      console.error('Database error ending match:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (!match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    
+    // Update players status if status column exists
+    db.all("PRAGMA table_info(players)", (err, columns) => {
+      if (err) {
+        console.error('Error checking players table:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      const hasStatusColumn = columns.some(col => col.name === 'status');
+      
+      if (hasStatusColumn) {
+        db.run('UPDATE players SET status = "available" WHERE id IN (?, ?)', 
+          [match.player_id, match.matched_player_id]);
+      }
+      
+      // Remove the match
+      db.run('DELETE FROM matches WHERE id = ?', [id], function(err) {
+        if (err) {
+          console.error('Error deleting match:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        res.status(200).json({ message: 'Match ended successfully' });
+      });
+    });
+  });
+});
+
+app.post('/api/admin/create-match', (req, res) => {
+  const { player1Id, player2Id, round = 1 } = req.body;
+  
+  if (!player1Id || !player2Id) {
+    return res.status(400).json({ error: 'Both player IDs are required' });
+  }
+  
+  // Update players status if status column exists
+  db.all("PRAGMA table_info(players)", (err, columns) => {
+    if (err) {
+      console.error('Error checking players table:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    const hasStatusColumn = columns.some(col => col.name === 'status');
+    
+    // Create the match
+    db.run(
+      'INSERT INTO matches (player_id, matched_player_id, round) VALUES (?, ?, ?)',
+      [player1Id, player2Id, round],
+      function(err) {
+        if (err) {
+          console.error('Error creating match:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (hasStatusColumn) {
+          db.run('UPDATE players SET status = "matched" WHERE id IN (?, ?)', 
+            [player1Id, player2Id]);
+        }
+        
+        res.status(201).json({ 
+          id: this.lastID,
+          player1Id,
+          player2Id,
+          round,
+          message: 'Match created successfully'
+        });
+      }
+    );
+  });
+});
 
 // Add a catch-all route handler for debugging
 app.use((req, res, next) => {

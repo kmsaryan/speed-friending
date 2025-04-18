@@ -19,22 +19,22 @@ router.get('/match/:playerType', (req, res) => {
 
   // Use a query that works whether or not the status column exists
   const query = statusColumnExists 
-    ? `SELECT id, name, gender, interests, preferences, playerType 
+    ? `SELECT id, name, gender, interests, preferences, playerType, tableNumber  
        FROM players 
-       WHERE playerType = ? AND status = 'available' AND id NOT IN (
+       WHERE playerType = ? AND status = 'available' AND id != ? AND id NOT IN (
          SELECT matched_player_id FROM matches WHERE player_id = ?
        ) 
        ORDER BY RANDOM() LIMIT 1`
-    : `SELECT id, name, gender, interests, preferences, playerType 
+    : `SELECT id, name, gender, interests, preferences, playerType, tableNumber
        FROM players 
-       WHERE playerType = ? AND id NOT IN (
+       WHERE playerType = ? AND id != ? AND id NOT IN (
          SELECT matched_player_id FROM matches WHERE player_id = ?
        ) 
        ORDER BY RANDOM() LIMIT 1`;
 
   db.get(
     query,
-    [oppositeType, req.query.playerId],
+    [oppositeType, req.query.playerId, req.query.playerId],
     (err, row) => {
       if (err) {
         console.error('Database error:', err.message);

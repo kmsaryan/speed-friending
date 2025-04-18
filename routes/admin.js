@@ -102,22 +102,41 @@ router.post('/admin/login', (req, res) => {
 
 // Get player statistics
 router.get('/admin/player-stats', (req, res) => {
-  db.get(
-    `SELECT 
-      COUNT(*) as total,
-      SUM(CASE WHEN playerType = 'stationary' THEN 1 ELSE 0 END) as stationary,
-      SUM(CASE WHEN playerType = 'moving' THEN 1 ELSE 0 END) as moving,
-      SUM(CASE WHEN status = 'matched' THEN 1 ELSE 0 END) as matched,
-      SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available
-    FROM players`,
-    (err, stats) => {
+  // First check if status column exists
+  db.all("PRAGMA table_info(players)", (err, columns) => {
+    if (err) {
+      console.error('Error checking table columns:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    const hasStatusColumn = columns.some(col => col.name === 'status');
+    console.log(`Status column exists: ${hasStatusColumn}`);
+    
+    // Use a query that works with or without the status column
+    const query = hasStatusColumn ? 
+      `SELECT 
+         COUNT(*) as total,
+         SUM(CASE WHEN playerType = 'stationary' THEN 1 ELSE 0 END) as stationary,
+         SUM(CASE WHEN playerType = 'moving' THEN 1 ELSE 0 END) as moving,
+         SUM(CASE WHEN status = 'matched' THEN 1 ELSE 0 END) as matched,
+         SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available
+       FROM players` :
+      `SELECT 
+         COUNT(*) as total,
+         SUM(CASE WHEN playerType = 'stationary' THEN 1 ELSE 0 END) as stationary,
+         SUM(CASE WHEN playerType = 'moving' THEN 1 ELSE 0 END) as moving,
+         0 as matched,
+         COUNT(*) as available
+       FROM players`;
+    
+    db.get(query, (err, stats) => {
       if (err) {
         console.error('Database error fetching player stats:', err.message);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.status(200).json(stats);
-    }
-  );
+      res.status(200).json(stats || { total: 0, stationary: 0, moving: 0, matched: 0, available: 0 });
+    });
+  });
 });
 
 // Get all ratings
@@ -195,22 +214,195 @@ router.post('/admin/clear-ratings', (req, res) => {
   });
 });
 
+// Get game status
+router.get('/admin/game-status', (req, res) => {
+  // First check if game_state table exists
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='game_state'", (err, table) => {
+    if (err) {
+      console.error('[ADMIN]: Error checking for game_state table:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (!table) {
+      console.log('[ADMIN]: Creating game_state table');
+      // Create the game_state table if it doesn't exist
+      db.run(`
+        CREATE TABLE IF NOT EXISTS game_state (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          status TEXT NOT NULL DEFAULT 'stopped',
+          current_round INTEGER NOT NULL DEFAULT 1,
+          last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `, function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error creating game_state table:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        // Insert default values
+        db.run(
+          'INSERT OR IGNORE INTO game_state (id, status, current_round) VALUES (1, ?, ?)',
+          ['stopped', 1],
+          function(err) {
+            if (err) {
+              console.error('[ADMIN]: Error inserting default game state:', err.message);
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Return default state
+            res.status(200).json({ status: 'stopped', round: 1 });
+          }
+        );
+      });
+      return;
+    }
+    
+    // Get the current game status
+    db.get('SELECT status, current_round FROM game_state WHERE id = 1', [], (err, state) => {
+      if (err) {
+        console.error('[ADMIN]: Error getting game status:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!state) {
+        // Initialize default state if missing
+        return res.status(200).json({ status: 'stopped', round: 1 });
+      }
+      
+      console.log('[ADMIN]: Retrieved game status:', state);
+      res.status(200).json({
+        status: state.status,
+        round: state.current_round
+      });
+    });
+  });
+});
+
 // Start game
 router.post('/admin/start-game', (req, res) => {
-  // In a real app, you might update a game_state table or broadcast to connected clients
-  res.status(200).json({ message: 'Game started successfully' });
+  const { round = 1 } = req.body;
+  
+  // Create the game_state table if it doesn't exist and update it
+  db.run(`
+    CREATE TABLE IF NOT EXISTS game_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      status TEXT NOT NULL DEFAULT 'stopped',
+      current_round INTEGER NOT NULL DEFAULT 1,
+      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `, function(err) {
+    if (err) {
+      console.error('[ADMIN]: Error creating game_state table:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    // Insert or update the game state
+    db.run(
+      'INSERT OR REPLACE INTO game_state (id, status, current_round, last_updated) VALUES (1, ?, ?, CURRENT_TIMESTAMP)',
+      ['running', round],
+      function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error starting game:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        console.log('[ADMIN]: Game started successfully. Round:', round);
+        
+        // Broadcast to all connected clients that the game has started
+        if (global.io) {
+          console.log('[ADMIN]: Broadcasting game start to all clients');
+          global.io.emit('game_status_change', { status: 'running', round });
+        } else {
+          console.log('[ADMIN]: Socket.io not initialized, unable to broadcast');
+        }
+        
+        res.status(200).json({ message: 'Game started successfully', status: 'running', round });
+      }
+    );
+  });
 });
 
 // Stop game
 router.post('/admin/stop-game', (req, res) => {
-  // In a real app, you might update a game_state table or broadcast to connected clients
-  res.status(200).json({ message: 'Game stopped successfully' });
+  // Create the game_state table if it doesn't exist and update it
+  db.run(`
+    CREATE TABLE IF NOT EXISTS game_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      status TEXT NOT NULL DEFAULT 'stopped',
+      current_round INTEGER NOT NULL DEFAULT 1,
+      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `, function(err) {
+    if (err) {
+      console.error('[ADMIN]: Error creating game_state table:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    // Insert or update the game state
+    db.run(
+      'INSERT OR REPLACE INTO game_state (id, status, last_updated) VALUES (1, ?, CURRENT_TIMESTAMP)',
+      ['stopped'],
+      function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error stopping game:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        console.log('[ADMIN]: Game stopped successfully');
+        
+        // Broadcast to all connected clients that the game has stopped
+        if (global.io) {
+          console.log('[ADMIN]: Broadcasting game stop to all clients');
+          global.io.emit('game_status_change', { status: 'stopped' });
+        } else {
+          console.log('[ADMIN]: Socket.io not initialized, unable to broadcast');
+        }
+        
+        res.status(200).json({ message: 'Game stopped successfully', status: 'stopped' });
+      }
+    );
+  });
 });
 
 // Next round
 router.post('/admin/next-round', (req, res) => {
-  // In a real app, you might update rounds in the database and notify clients
-  res.status(200).json({ message: 'Advanced to next round' });
+  // Get current round first
+  db.get('SELECT current_round FROM game_state WHERE id = 1', [], (err, state) => {
+    if (err) {
+      console.error('[ADMIN]: Error getting current round:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    const currentRound = state ? state.current_round : 1;
+    const nextRound = currentRound + 1;
+    
+    // Update the round
+    db.run(
+      'UPDATE game_state SET current_round = ?, last_updated = CURRENT_TIMESTAMP WHERE id = 1',
+      [nextRound],
+      function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error advancing round:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        console.log('[ADMIN]: Advanced to round:', nextRound);
+        
+        // Broadcast to all connected clients that the round has changed
+        if (global.io) {
+          console.log('[ADMIN]: Broadcasting round change to all clients');
+          global.io.emit('game_status_change', { round: nextRound });
+        } else {
+          console.log('[ADMIN]: Socket.io not initialized, unable to broadcast');
+        }
+        
+        res.status(200).json({ 
+          message: `Advanced to round ${nextRound}`, 
+          round: nextRound 
+        });
+      }
+    );
+  });
 });
 
 module.exports = router;

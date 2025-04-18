@@ -45,6 +45,60 @@ function Matching() {
     };
   }, [playerType]);
 
+  useEffect(() => {
+    socket.emit("game_status_check");
+    
+    // Listen for game status updates
+    socket.on("game_status_update", (gameState) => {
+      console.log("Received game status update:", gameState);
+      if (gameState.status === 'stopped') {
+        setMessage("The game is currently paused. Please wait for the administrator to start the game.");
+        setLoading(true);
+      } else if (gameState.status === 'running') {
+        if (!match) {
+          setMessage("The game is active. Looking for a match...");
+          socket.emit("find_match", playerType);
+        }
+      }
+      
+      if (gameState.round && match && gameState.round !== match.round) {
+        setMessage(`Round ${gameState.round} has started. Looking for a new match...`);
+        setMatch(null);
+        setLoading(true);
+        socket.emit("find_match", playerType);
+      }
+    });
+    
+    // Listen for game status changes
+    socket.on("game_status_change", (gameState) => {
+      console.log("Game status changed:", gameState);
+      if (gameState.status === 'stopped') {
+        setMessage("The game has been paused by the administrator. Please wait for the game to resume.");
+        setLoading(true);
+      } else if (gameState.status === 'running') {
+        setMessage("The game is now active. Looking for a match...");
+        if (!match) {
+          socket.emit("find_match", playerType);
+        }
+      }
+      
+      if (gameState.round && gameState.round !== match?.round) {
+        setMessage(`Round ${gameState.round} has started. Looking for a new match...`);
+        setMatch(null);
+        setLoading(true);
+        socket.emit("find_match", playerType);
+      }
+    });
+    
+    socket.emit("find_match", playerType);
+    setLoading(true);
+
+    return () => {
+      socket.off("game_status_update");
+      socket.off("game_status_change");
+    };
+  }, [playerType, match]);
+
   // Timer effect
   useEffect(() => {
     let interval = null;
@@ -77,22 +131,36 @@ function Matching() {
     if (!match) return;
     
     try {
+      // Get the player ID from socket mapping (we were using socket.id before)
+      const playerData = socketToPlayer?.get(socket.id);
+      const actualPlayerId = playerData ? playerData.playerId : socket.id;
+      
+      console.log("Submitting rating with player ID:", actualPlayerId);
+      
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          playerId: socket.id, // You might need to store the actual player ID
+          playerId: actualPlayerId,
           ratedPlayerId: match.id,
           enjoyment: ratings.enjoyment,
           depth: ratings.depth,
           wouldChatAgain: ratings.wouldChatAgain,
-          round: 1 // You might need to track the current round
+          round: match.round || 1
         })
       });
       
       if (response.ok) {
         setMessage("Rating submitted! Looking for your next match...");
         setShowRating(false);
+        
+        // Emit event to update server about the rating submission
+        socket.emit("submit_rating", {
+          playerId: actualPlayerId,
+          ratedPlayerId: match.id,
+          round: match.round || 1
+        });
+        
         retryMatch();
       }
     } catch (error) {

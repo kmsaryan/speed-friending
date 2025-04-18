@@ -18,9 +18,6 @@ async function migrateDatabase() {
     fs.mkdirSync(dbDir, { recursive: true });
   }
   
-  // Read schema file
-  const schema = fs.readFileSync(schemaPath, 'utf8');
-  
   // Connect to database
   const db = new sqlite3.Database(dbPath);
   
@@ -31,71 +28,85 @@ async function migrateDatabase() {
     });
   }
   
-  // Begin transaction
-  db.serialize(() => {
-    console.log('Running schema script...');
-    
-    // Enable foreign keys
-    db.run('PRAGMA foreign_keys = OFF');
-    
-    // Run the schema script which has CREATE TABLE IF NOT EXISTS statements
-    db.exec(schema, (err) => {
-      if (err) {
-        console.error('Error applying schema:', err.message);
-        return;
-      }
-      
-      console.log('Schema applied successfully.');
-      
-      // Check if players table exists
-      db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='players'", (err, table) => {
-        if (err) {
-          console.error('Error checking for players table:', err.message);
-          return;
-        }
+  try {
+    // Begin transaction
+    await new Promise((resolve, reject) => {
+      db.serialize(() => {
+        console.log('Running schema script...');
         
-        if (!table) {
-          console.log('Players table does not exist. It will be created by the schema.');
-          return;
-        }
+        // Enable foreign keys
+        db.run('PRAGMA foreign_keys = OFF');
         
-        // Check if status column exists
-        db.all("PRAGMA table_info(players)", (err, rows) => {
+        // Run the schema script which has CREATE TABLE IF NOT EXISTS statements
+        db.exec(fs.readFileSync(schemaPath, 'utf8'), (err) => {
           if (err) {
-            console.error('Error checking columns:', err.message);
-            return;
+            console.error('Error in initial schema application:', err.message);
+            // Continue with migration even if there's an error, as we'll try to fix it
           }
           
-          const hasStatusColumn = rows.some(row => row.name === 'status');
+          console.log('Base schema applied, checking for required columns...');
           
-          if (!hasStatusColumn) {
-            console.log('Adding status column to players table...');
-            db.run('ALTER TABLE players ADD COLUMN status TEXT DEFAULT "available"', (err) => {
-              if (err) {
-                console.error('Error adding status column:', err.message);
-              } else {
-                console.log('Status column added successfully.');
-              }
-            });
-          } else {
-            console.log('Status column already exists in players table.');
-          }
+          // Check if players table exists
+          db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='players'", (err, table) => {
+            if (err) {
+              console.error('Error checking for players table:', err.message);
+              reject(err);
+              return;
+            }
+            
+            if (table) {
+              // Check if status column exists in players table
+              db.all("PRAGMA table_info(players)", (err, columns) => {
+                if (err) {
+                  console.error('Error checking columns:', err.message);
+                  reject(err);
+                  return;
+                }
+                
+                const hasStatusColumn = columns.some(col => col.name === 'status');
+                
+                if (!hasStatusColumn) {
+                  console.log('Status column missing, adding it to players table...');
+                  
+                  // Add status column to existing players table
+                  db.run('ALTER TABLE players ADD COLUMN status TEXT DEFAULT "available"', (err) => {
+                    if (err) {
+                      console.error('Error adding status column:', err.message);
+                      reject(err);
+                      return;
+                    }
+                    
+                    console.log('Status column added successfully to players table.');
+                    resolve();
+                  });
+                } else {
+                  console.log('Status column already exists in players table.');
+                  resolve();
+                }
+              });
+            } else {
+              console.log('Players table does not exist yet. It will be created with the schema.');
+              resolve();
+            }
+          });
         });
       });
     });
-  });
-  
-  // Wait for operations to complete and close the connection
-  setTimeout(() => {
+    
+    console.log('Database migration completed successfully.');
+  } catch (error) {
+    console.error('Error during database migration:', error);
+  } finally {
+    // Close the database connection
     db.close((err) => {
       if (err) {
         console.error('Error closing database:', err.message);
       } else {
-        console.log('Database migration completed.');
+        console.log('Database connection closed.');
       }
     });
-  }, 1000); // Give some time for async operations to complete
+  }
 }
 
 // Run the migration
-migrateDatabase().catch(console.error);
+migrateDatabase();
