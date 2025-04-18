@@ -106,6 +106,53 @@ speed-friending/
 
 ---
 
+## Database Setup and Operations
+
+### **Initialize the Database**
+Run the following command to initialize the database using the schema:
+```bash
+sqlite3 speed-friending.sqlite < database/schema.sql
+```
+
+### **Basic Database Operations**
+
+1. **Open the Database**:
+   ```bash
+   sqlite3 speed-friending.sqlite
+   ```
+
+2. **View All Tables**:
+   Inside the SQLite CLI, run:
+   ```sql
+   .tables
+   ```
+
+3. **View the Structure of a Table**:
+   To view the structure of the `players` table:
+   ```sql
+   PRAGMA table_info(players);
+   ```
+
+4. **View All Entries in a Table**:
+   To view all entries in the `players` table:
+   ```sql
+   SELECT * FROM players;
+   ```
+
+5. **Clear All Entries in a Table**:
+   To delete all entries from the `players` table:
+   ```sql
+   DELETE FROM players;
+   ```
+
+6. **Exit the SQLite CLI**:
+   To exit the SQLite CLI:
+   ```bash
+   .exit
+   ```
+
+---
+
 ## Features
 
 - **Dynamic Matching**: Players are matched randomly while avoiding immediate re-matches.

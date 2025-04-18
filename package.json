@@ -6,7 +6,9 @@
     "start": "cross-env PORT=3000 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "server": "node server.js",
+    "migrate": "node database/migrate.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -19,7 +21,9 @@
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.14.1",
     "react-scripts": "5.0.0",
-    "sqlite3": "^5.1.2"
+    "socket.io": "^4.5.4",
+    "sqlite3": "^5.1.2",
+    "socket.io-client": "^4.5.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

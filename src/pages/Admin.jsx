@@ -66,6 +66,28 @@ function Admin() {
     }
   };
 
+  const handleFormTeams = async () => {
+    const round = 1; // Replace with the current round number
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/form-teams`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ round }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Teams formed:', data.teams);
+        setMessage('Teams formed successfully!');
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.error || 'Failed to form teams.');
+      }
+    } catch (error) {
+      console.error('Error forming teams:', error);
+      setMessage('An error occurred. Please try again.');
+    }
+  };
+
   return (
     <div>
       <h1>Admin Page</h1>
@@ -86,6 +108,7 @@ function Admin() {
       <button onClick={handleLogin}>Login</button>
       <button onClick={handleClearDatabase}>Clear Database</button>
       <button onClick={handleClearPlayers}>Clear Player Data</button>
+      <button onClick={handleFormTeams}>Form Teams</button>
       <p>{message}</p>
     </div>
   );
