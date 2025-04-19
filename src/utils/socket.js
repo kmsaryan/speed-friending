@@ -2,6 +2,14 @@ import { io } from "socket.io-client";
 
 // Dynamically determine the WebSocket server URL
 const getWebSocketURL = () => {
+  // In production, use the same hostname but with the WebSocket protocol
+  if (process.env.NODE_ENV === 'production') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Use the same host (this handles deployed scenarios automatically)
+    return `${protocol}//${window.location.host}`;
+  }
+  
+  // Otherwise use the configured backend URL
   if (process.env.REACT_APP_BACKEND_URL) {
     return process.env.REACT_APP_BACKEND_URL.replace(/^http/, "ws");
   }

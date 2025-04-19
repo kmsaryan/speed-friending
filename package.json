@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env PORT=3000 react-scripts start",
-    "build": "node src/utils/copyIcebreakers.js && react-scripts build",
+    "start": "node server.js",
+    "dev:server": "nodemon server.js",
+    "dev:client": "cross-env PORT=3000 react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "node server.js",
@@ -44,5 +46,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

@@ -247,6 +247,24 @@ app.post('/api/admin/create-match', (req, res) => {
   });
 });
 
+// Add this section before the last app.use() (the 404 handler)
+if (process.env.NODE_ENV === 'production') {
+  console.log('Running in production mode - serving static files');
+  const path = require('path');
+  
+  // Serve static files from the React build folder
+  app.use(express.static(path.join(__dirname, 'build')));
+  
+  // Serve the React app for all other routes
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
+      return next();
+    }
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
+}
+
 // Add more debug logging for routes
 app.use((req, res, next) => {
   const route = `${req.method} ${req.path}`;

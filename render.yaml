@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: speed-friending-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        value: /data/speed-friending.sqlite
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        value: https://speed-friending-ui.onrender.com
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+      
+  - type: web
+    name: speed-friending-ui
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        value: https://speed-friending-api.onrender.com
