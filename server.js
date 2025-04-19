@@ -276,7 +276,6 @@ if (process.env.NODE_ENV === 'production') {
       
       // Serve the React app for all other routes
       app.get('*', (req, res, next) => {
-        // Skip API routes
         if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
           return next();
         }
@@ -305,6 +304,21 @@ if (process.env.NODE_ENV === 'production') {
     console.error('Error setting up static file serving:', err);
   }
 }
+
+// Serve the React app for all non-API routes
+app.get('*', (req, res, next) => {
+  if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
+    return next(); // Skip API and WebSocket routes
+  }
+
+  const indexPath = path.join(__dirname, 'build', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.error(`Index file not found at ${indexPath}`);
+    res.status(404).send('Frontend not built. Index.html not found.');
+  }
+});
 
 // Add more debug logging for routes
 app.use((req, res, next) => {
