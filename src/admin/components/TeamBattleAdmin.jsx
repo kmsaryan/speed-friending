@@ -1,104 +1,110 @@
 import React, { useState, useEffect } from 'react';
-import socket from '../../utils/socket';
-import '../../styles/global.css';
 import '../styles/TeamBattleAdmin.css';
+import socket from '../../utils/socket';
 
-const battleTypes = [
-  "Language Challenge - Teach a Song",
-  "Word Association Game",
-  "Cultural Storytelling",
-  "Impromptu Skit Performance",
-  "Language Pictionary"
-];
-
-function TeamBattleAdmin({ round, onMessage, onBack }) { // Add onBack prop
+function TeamBattleAdmin({ round = 1, onMessage, onBack }) {
   const [teams, setTeams] = useState([]);
   const [battles, setBattles] = useState([]);
-  const [selectedBattle, setSelectedBattle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Fetch teams and generate battles
   useEffect(() => {
     fetchTeams();
-    
-    // Listen for battle results to update UI
-    socket.on('battle_result', (data) => {
-      if (data.battleId && data.winnerId) {
-        setBattles(prev => prev.map(battle => 
-          battle.id === data.battleId ? {...battle, winner: data.winnerId} : battle
-        ));
-        
-        // If this is the currently selected battle, update it
-        if (selectedBattle && selectedBattle.id === data.battleId) {
-          setSelectedBattle(prev => ({...prev, winner: data.winnerId}));
-        }
-      }
-    });
-    
-    return () => {
-      socket.off('battle_result');
-    };
   }, [round]);
 
   const fetchTeams = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
       const response = await fetch(`${backendUrl}/api/teams/${round}`);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Error fetching teams: ${response.status}`);
       }
       
       const data = await response.json();
-      setTeams(data.teams);
+      console.log('Fetched teams:', data);
+      setTeams(data.teams || []);
       
-      if (data.teams.length >= 2) {
-        fetchExistingBattles(data.teams);
-      } else {
-        setLoading(false);
+      // Only generate battles if we have teams
+      if (data.teams && data.teams.length > 0) {
+        // Fetch existing battles or generate new ones
+        fetchBattles(data.teams);
       }
-    } catch (err) {
-      setError('Error loading teams: ' + err.message);
+      
       setLoading(false);
+    } catch (err) {
+      console.error('Error fetching teams:', err);
+      setError(`Failed to fetch teams: ${err.message}`);
+      setLoading(false);
+      if (onMessage) onMessage(`Error: ${err.message}`);
     }
   };
   
-  const fetchExistingBattles = async (teamsList) => {
+  const fetchBattles = async (teamsList) => {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
       const response = await fetch(`${backendUrl}/api/battles/${round}`);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched battles:', data);
+        if (data.battles && data.battles.length > 0) {
+          // Format battles to include team details
+          const formattedBattles = data.battles.map(battle => {
+            const team1 = teamsList.find(t => t.team_id === battle.team1_id) || { 
+              team_id: battle.team1_id, 
+              player1_name: 'Unknown', 
+              player2_name: 'Unknown' 
+            };
+            const team2 = teamsList.find(t => t.team_id === battle.team2_id) || { 
+              team_id: battle.team2_id, 
+              player1_name: 'Unknown', 
+              player2_name: 'Unknown' 
+            };
+            
+            return {
+              ...battle,
+              team1,
+              team2,
+              inProgress: battle.status === 'in_progress'
+            };
+          });
+          
+          setBattles(formattedBattles);
+          return;
+        }
       }
       
-      const data = await response.json();
-      
-      if (data.battles && data.battles.length > 0) {
-        console.log("Found existing battles:", data.battles);
-        setBattles(data.battles);
-      } else {
-        console.log("No existing battles found, generating new ones");
-        generateBattles(teamsList);
-      }
-      
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching battles:", err);
-      // Fall back to generating new battles
+      // If no battles found or error, generate new ones
       generateBattles(teamsList);
-      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching battles:', err);
+      // Fall back to generating battles
+      generateBattles(teamsList);
     }
   };
   
   const generateBattles = (teamsList) => {
-    // Create balanced pairings for battles
-    const battlePairings = [];
+    if (!teamsList || teamsList.length < 2) {
+      setBattles([]);
+      return;
+    }
+    
+    console.log('Generating battles from teams:', teamsList);
+    const battleTypes = [
+      "Language Challenge",
+      "Word Association Game",
+      "Cultural Storytelling",
+      "Impromptu Skit",
+      "Team Quiz"
+    ];
+    
+    // Create balanced pairings
+    const generatedBattles = [];
     const teamsCopy = [...teamsList];
     
-    // Shuffle the teams for random matchups
+    // Shuffle teams for random matchups
     for (let i = teamsCopy.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [teamsCopy[i], teamsCopy[j]] = [teamsCopy[j], teamsCopy[i]];
@@ -108,149 +114,177 @@ function TeamBattleAdmin({ round, onMessage, onBack }) { // Add onBack prop
     for (let i = 0; i < teamsCopy.length - 1; i += 2) {
       if (i + 1 < teamsCopy.length) {
         const battleType = battleTypes[Math.floor(Math.random() * battleTypes.length)];
-        battlePairings.push({
-          id: i / 2 + 1,
+        generatedBattles.push({
+          id: `temp-${i/2}`, // Temporary ID until saved
+          team1_id: teamsCopy[i].team_id,
+          team2_id: teamsCopy[i+1].team_id,
           team1: teamsCopy[i],
-          team2: teamsCopy[i + 1],
+          team2: teamsCopy[i+1],
           battleType,
-          winner: null,
+          round,
+          winner_id: null,
+          status: 'pending',
           inProgress: false
         });
       }
     }
     
-    setBattles(battlePairings);
-  };
-  
-  const startTeamBattles = () => {
-    // Notify server to start team battles
-    socket.emit("start_team_battles", { round });
+    // Handle odd number of teams
+    if (teamsCopy.length % 2 !== 0 && teamsCopy.length > 0) {
+      const lastTeam = teamsCopy[teamsCopy.length - 1];
+      generatedBattles.push({
+        id: `temp-bye`,
+        team1_id: lastTeam.team_id,
+        team2_id: null,
+        team1: lastTeam,
+        team2: { 
+          team_id: 'bye',
+          player1_name: 'Bye', 
+          player2_name: 'Round' 
+        },
+        battleType: "Bye Round",
+        round,
+        winner_id: lastTeam.team_id, // Auto-win for the team with a bye
+        status: 'completed',
+        inProgress: false
+      });
+    }
     
-    // Save battles to database if needed
-    saveBattlesToDatabase();
+    setBattles(generatedBattles);
   };
   
-  const saveBattlesToDatabase = async () => {
+  const saveBattles = async () => {
+    if (battles.length === 0) return;
+    
     try {
+      setLoading(true);
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/create-battles`, {
+      const response = await fetch(`${backendUrl}/api/battles/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ battles, round })
+        body: JSON.stringify({ 
+          battles: battles.map(b => ({
+            team1_id: b.team1_id,
+            team2_id: b.team2_id,
+            battle_type: b.battleType,
+            round
+          }))
+        })
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Error saving battles: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log("Battles saved:", data);
+      if (onMessage) onMessage('Battles saved successfully!');
+      
+      // Refresh battles to get the server-generated IDs
+      fetchTeams();
     } catch (err) {
-      console.error("Error saving battles:", err);
-      setError('Failed to save battles. Players may not receive proper notifications.');
+      console.error('Error saving battles:', err);
+      setError(`Failed to save battles: ${err.message}`);
+      if (onMessage) onMessage(`Error: ${err.message}`);
+      setLoading(false);
     }
   };
   
-  const startBattle = (battle) => {
-    // Update the selected battle and mark it as in progress
-    setSelectedBattle({...battle, inProgress: true});
-    
-    // Update battles list to mark this one as in progress
-    const updatedBattles = battles.map(b => 
-      b.id === battle.id ? {...b, inProgress: true} : b
-    );
-    setBattles(updatedBattles);
-    
-    // Notify players in this battle
-    socket.emit("battle_update", {
-      battleId: battle.id,
-      battleType: battle.battleType,
-      team1Id: battle.team1.team_id,
-      team2Id: battle.team2.team_id
-    });
-  };
-  
-  const declareBattleWinner = (battleId, winningTeamId) => {
-    // Update battles to record the winner
-    const updatedBattles = battles.map(b => 
-      b.id === battleId ? {...b, winner: winningTeamId, inProgress: false} : b
-    );
-    setBattles(updatedBattles);
-    setSelectedBattle(null);
-    
-    // Notify about the battle result
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-    fetch(`${backendUrl}/api/record-battle-winner`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        round: round,
-        battleId: battleId,
-        winningTeamId: winningTeamId
-      })
-    }).catch(err => console.error('Failed to record battle winner:', err));
-  };
-  
-  const changeBattleType = (battle, newType) => {
-    // Update the battle type
-    const updatedBattles = battles.map(b => 
-      b.id === battle.id ? {...b, battleType: newType} : b
-    );
-    setBattles(updatedBattles);
-    
-    // If this is the selected battle, update it
-    if (selectedBattle && selectedBattle.id === battle.id) {
-      setSelectedBattle({...selectedBattle, battleType: newType});
+  const startTeamBattles = () => {
+    if (battles.length === 0) {
+      if (onMessage) onMessage('No battles available to start');
+      return;
     }
     
-    // Notify players about the battle type change
-    socket.emit("battle_update", {
-      battleId: battle.id,
-      battleType: newType,
-      team1Id: battle.team1.team_id,
-      team2Id: battle.team2.team_id
-    });
+    // First save battles if they're temporary
+    if (battles.some(b => !b.id || b.id.startsWith('temp'))) {
+      saveBattles();
+    }
+    
+    // Emit socket event to notify players
+    socket.emit('start_team_battles', { round });
+    if (onMessage) onMessage(`Team battles for round ${round} have been started!`);
+  };
+
+  const startBattle = async (battleId) => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/battles/${battleId}/start`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error starting battle: ${response.status}`);
+      }
+      
+      // Update local state to show battle as in progress
+      setBattles(battles.map(b => 
+        b.id === battleId ? { ...b, inProgress: true, status: 'in_progress' } : b
+      ));
+      
+      if (onMessage) onMessage(`Battle ${battleId} started!`);
+    } catch (err) {
+      console.error('Error starting battle:', err);
+      if (onMessage) onMessage(`Error starting battle: ${err.message}`);
+    }
   };
   
+  const declareWinner = async (battleId, winningTeamId) => {
+    if (!battleId || !winningTeamId) return;
+    
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/battles/${battleId}/winner`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winner_id: winningTeamId })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error declaring winner: ${response.status}`);
+      }
+      
+      // Update local state
+      setBattles(battles.map(b => 
+        b.id === battleId ? { 
+          ...b, 
+          winner_id: winningTeamId, 
+          inProgress: false,
+          status: 'completed' 
+        } : b
+      ));
+      
+      if (onMessage) onMessage(`Team ${winningTeamId} declared as winner!`);
+    } catch (err) {
+      console.error('Error declaring winner:', err);
+      if (onMessage) onMessage(`Error: ${err.message}`);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="admin-section">
+      <div className="admin-section team-battle-admin">
         <h2>Team Battles Administration - Round {round}</h2>
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <p>Loading team data...</p>
+          <p>Loading team and battle data...</p>
         </div>
       </div>
     );
   }
-  
+
   if (error) {
     return (
-      <div className="admin-section">
+      <div className="admin-section team-battle-admin">
         <h2>Team Battles Administration - Round {round}</h2>
         <div className="error-message">
           <p>{error}</p>
-          <button onClick={fetchTeams} className="refresh-button">Try Again</button>
+          <button className="refresh-button" onClick={fetchTeams}>Try Again</button>
+          <button className="back-button" onClick={onBack}>Back to Admin</button>
         </div>
       </div>
     );
   }
-  
-  if (teams.length === 0) {
-    return (
-      <div className="admin-section">
-        <h2>Team Battles Administration - Round {round}</h2>
-        <div className="no-teams-message">
-          <h2>No Teams Available</h2>
-          <p>Teams need to be formed before battles can begin.</p>
-          <button onClick={onBack} className="btn-primary"> {/* Replace navigate with onBack */}
-            Return to Admin Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
+
   return (
     <div className="admin-section team-battle-admin">
       <h2>Team Battles Administration - Round {round}</h2>
@@ -260,6 +294,7 @@ function TeamBattleAdmin({ round, onMessage, onBack }) { // Add onBack prop
           <button 
             className="primary-button start-battles-button"
             onClick={startTeamBattles}
+            disabled={teams.length < 2}
           >
             Broadcast Team Battles Start
           </button>
@@ -271,137 +306,122 @@ function TeamBattleAdmin({ round, onMessage, onBack }) { // Add onBack prop
           </button>
           <button 
             className="tertiary-button back-button"
-            onClick={onBack} // Replace navigate with onBack
+            onClick={onBack}
           >
             Back to Admin
           </button>
         </div>
       </div>
       
-      {selectedBattle ? (
-        <div className="active-battle-admin">
-          <div className="battle-header">
-            <h3>Active Battle: #{selectedBattle.id}</h3>
-            <div className="battle-type-selector">
-              <select 
-                value={selectedBattle.battleType}
-                onChange={(e) => changeBattleType(selectedBattle, e.target.value)}
-              >
-                {battleTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
+      <div className="control-card">
+        <h3>Teams ({teams.length})</h3>
+        {teams.length === 0 ? (
+          <div className="empty-state">
+            <p>No teams have been formed for round {round} yet.</p>
+            <p>Form teams in the Dashboard before starting team battles.</p>
           </div>
-          
-          <div className="battle-teams-admin">
-            <div className="battle-team-admin">
-              <h3>Team {selectedBattle.team1.team_id}</h3>
-              <p>{selectedBattle.team1.player1_name} & {selectedBattle.team1.player2_name}</p>
-              <p className="interests">Interests: {selectedBattle.team1.player1_interests}, {selectedBattle.team1.player2_interests}</p>
-              <button 
-                className="winner-button team1" 
-                onClick={() => declareBattleWinner(selectedBattle.id, selectedBattle.team1.team_id)}
-              >
-                Team {selectedBattle.team1.team_id} Wins
-              </button>
-            </div>
-            <div className="battle-vs">VS</div>
-            <div className="battle-team-admin">
-              <h3>Team {selectedBattle.team2.team_id}</h3>
-              <p>{selectedBattle.team2.player1_name} & {selectedBattle.team2.player2_name}</p>
-              <p className="interests">Interests: {selectedBattle.team2.player1_interests}, {selectedBattle.team2.player2_interests}</p>
-              <button 
-                className="winner-button team2" 
-                onClick={() => declareBattleWinner(selectedBattle.id, selectedBattle.team2.team_id)}
-              >
-                Team {selectedBattle.team2.team_id} Wins
-              </button>
-            </div>
-          </div>
-          
-          <div className="battle-instructions-admin">
-            <h3>Battle Instructions</h3>
-            <p>{getBattleInstructions(selectedBattle.battleType)}</p>
-          </div>
-          
-          <button 
-            className="secondary-button cancel-button"
-            onClick={() => setSelectedBattle(null)}
-          >
-            Return to Battles List
-          </button>
-        </div>
-      ) : (
-        <div className="battles-grid-admin">
-          <h3>Battle Schedule</h3>
-          {battles.map(battle => (
-            <div 
-              key={battle.id} 
-              className={`battle-card-admin ${battle.inProgress ? 'in-progress' : ''} ${battle.winner ? 'completed' : ''}`}
-            >
-              <div className="battle-header-admin">
-                <span className="battle-id-admin">Battle #{battle.id}</span>
-                <div className="battle-type-selector">
-                  <select 
-                    value={battle.battleType}
-                    onChange={(e) => changeBattleType(battle, e.target.value)}
-                  >
-                    {battleTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
+        ) : (
+          <div className="teams-list">
+            {teams.map(team => (
+              <div className="team-item" key={team.team_id}>
+                <div className="team-header">Team {team.team_id}</div>
+                <div className="team-members">
+                  <div>{team.player1_name}</div>
+                  <div>&</div>
+                  <div>{team.player2_name}</div>
                 </div>
               </div>
-              <div className="battle-teams-preview-admin">
-                <div className="team-preview-admin">
-                  <h4>Team {battle.team1.team_id}</h4>
-                  <p>{battle.team1.player1_name} & {battle.team1.player2_name}</p>
-                </div>
-                <div className="vs-admin">VS</div>
-                <div className="team-preview-admin">
-                  <h4>Team {battle.team2.team_id}</h4>
-                  <p>{battle.team2.player1_name} & {battle.team2.player2_name}</p>
-                </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {teams.length > 0 && (
+        <div className="control-card">
+          <h3>Battle Pairings ({battles.length})</h3>
+          
+          {battles.length === 0 ? (
+            <div className="empty-state">
+              <p>No battles have been created yet.</p>
+              <button 
+                className="generate-button"
+                onClick={() => generateBattles(teams)}
+              >
+                Generate Battle Pairings
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="battles-grid">
+                {battles.map(battle => (
+                  <div 
+                    key={battle.id} 
+                    className={`battle-card ${battle.inProgress ? 'in-progress' : ''} ${battle.winner_id ? 'completed' : ''}`}
+                  >
+                    <div className="battle-header">
+                      <span className="battle-id">Battle #{typeof battle.id === 'string' && battle.id.startsWith('temp') ? battle.id.replace('temp-', '') : battle.id}</span>
+                      <span className="battle-type">{battle.battleType}</span>
+                    </div>
+                    
+                    {battle.team1 && battle.team2 && (
+                      <div className="battle-teams-preview">
+                        <div className="team-preview">
+                          <h4>Team {battle.team1.team_id}</h4>
+                          <p>{battle.team1.player1_name} & {battle.team1.player2_name}</p>
+                        </div>
+                        <div className="vs">VS</div>
+                        <div className="team-preview">
+                          <h4>Team {battle.team2.team_id}</h4>
+                          <p>{battle.team2.player1_name} & {battle.team2.player2_name}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {battle.winner_id ? (
+                      <div className="battle-result">
+                        <p>Winner: Team {battle.winner_id}</p>
+                      </div>
+                    ) : battle.inProgress ? (
+                      <div className="battle-actions">
+                        <p>Battle in progress</p>
+                        <div className="winner-buttons">
+                          <button onClick={() => declareWinner(battle.id, battle.team1_id)}>
+                            Team {battle.team1.team_id} Wins
+                          </button>
+                          <button onClick={() => declareWinner(battle.id, battle.team2_id)}>
+                            Team {battle.team2.team_id} Wins
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        className="start-battle-button"
+                        onClick={() => startBattle(battle.id)}
+                        disabled={typeof battle.id === 'string' && battle.id.startsWith('temp')}
+                      >
+                        {typeof battle.id === 'string' && battle.id.startsWith('temp') 
+                          ? 'Save Battles to Start' 
+                          : 'Start Battle'}
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
               
-              {battle.winner ? (
-                <div className="battle-result-admin">
-                  <p>Winner: Team {battle.winner}</p>
+              {battles.some(b => typeof b.id === 'string' && b.id.startsWith('temp')) && (
+                <div className="save-battles">
+                  <button onClick={saveBattles} className="save-button">
+                    Save Battle Pairings
+                  </button>
+                  <p>Battles must be saved before they can be started.</p>
                 </div>
-              ) : (
-                <button 
-                  className="start-battle-button-admin"
-                  onClick={() => startBattle(battle)}
-                  disabled={battle.inProgress}
-                >
-                  {battle.inProgress ? 'Battle in Progress' : 'Start Battle'}
-                </button>
               )}
-            </div>
-          ))}
+            </>
+          )}
         </div>
       )}
     </div>
   );
-  
-  // Helper function to get battle instructions
-  function getBattleInstructions(battleType) {
-    switch(battleType) {
-      case "Language Challenge - Teach a Song":
-        return "Each team has 5 minutes to teach the other team a short song or phrase in a language they know.";
-      case "Word Association Game":
-        return "Teams take turns saying words that relate to the previous word. The team that hesitates or repeats a word loses.";
-      case "Cultural Storytelling":
-        return "Each team shares a 2-minute story from their cultural background. The audience votes on the most engaging story.";
-      case "Impromptu Skit Performance":
-        return "Teams have 3 minutes to create a short skit that incorporates three random words provided by the host.";
-      case "Language Pictionary":
-        return "One team member draws while their partner guesses. The fastest team to guess correctly wins.";
-      default:
-        return "Prepare for your battle!";
-    }
-  }
 }
 
 export default TeamBattleAdmin;

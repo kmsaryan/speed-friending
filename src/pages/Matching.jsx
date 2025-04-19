@@ -269,27 +269,36 @@ function Matching() {
     return () => clearInterval(interval);
   }, [timerActive, timeLeft, playerType, matchId]);
 
-  // Listen for timer updates from the room
+  // Enhanced listener for timer updates from the room
   useEffect(() => {
     socket.on("timer_update", (data) => {
       console.log("Received timer update:", data);
 
       if (data.action === "start") {
         setTimerActive(true);
-        setTimeLeft(data.timeLeft);
+        setTimeLeft(data.timeLeft || 180); // Ensure we have a default
+        console.log(`Timer started with ${data.timeLeft} seconds`);
       } else if (data.action === "pause") {
         setTimerActive(false);
+        console.log("Timer paused");
       } else if (data.action === "timeout") {
         setTimerActive(false);
         setTimeLeft(0);
         setShowRating(true);
+        console.log("Timer ended, showing rating form");
+      } else if (data.action === "sync") {
+        // Explicitly update the timeLeft for moving participants
+        if (playerType === 'moving') {
+          setTimeLeft(data.timeLeft);
+          console.log(`Moving participant timer synced: ${data.timeLeft} seconds`);
+        }
       }
     });
 
     return () => {
       socket.off("timer_update");
     };
-  }, []);
+  }, [playerType]); // Add playerType as a dependency
 
   // Add socket listener for new available players
   useEffect(() => {
@@ -352,13 +361,13 @@ function Matching() {
     };
   }, [playerId, navigate]);
 
-  // Update toggleTimer function to emit timer events to the room
+  // Update toggleTimer function to emit timer events to the room with improved logging
   const toggleTimer = () => {
     const newTimerState = !timerActive;
     setTimerActive(newTimerState);
 
     if (matchId) {
-      console.log(`Toggling timer for match ${matchId}: ${newTimerState ? "start" : "pause"}`);
+      console.log(`[LOCAL] Toggling timer for match ${matchId}: ${newTimerState ? "start" : "pause"} with time ${timeLeft}`);
       socket.emit("timer_control", {
         matchId: matchId,
         action: newTimerState ? "start" : "pause",

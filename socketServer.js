@@ -422,8 +422,18 @@ const initializeSocketServer = (server) => {
       const matchRoom = `match_${matchId}`;
       console.log(`[SOCKET LOG]: Timer control for room ${matchRoom}. Action: ${action}, Time Left: ${timeLeft}`);
       
+      // Create a cleaner message with explicit action and timeLeft
+      const timerUpdate = {
+        action,
+        timeLeft: parseInt(timeLeft, 10) || 180,
+        timestamp: Date.now()
+      };
+      
       // Broadcast to the specific match room (including the sender for consistency)
-      io.in(matchRoom).emit("timer_update", { action, timeLeft });
+      io.in(matchRoom).emit("timer_update", timerUpdate);
+      
+      // Debug log to confirm emission
+      console.log(`[SOCKET LOG]: Emitted timer_update to room ${matchRoom}:`, timerUpdate);
     });
 
     // New event handler for starting team battles

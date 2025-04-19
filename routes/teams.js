@@ -3,7 +3,8 @@ const router = express.Router();
 const db = require('../database');
 
 router.post('/form-teams', (req, res) => {
-  const { round } = req.body;
+  // Handle missing round parameter with default value of 1
+  const round = parseInt(req.body.round, 10) || 1;
 
   db.all(
     `SELECT r1.player_id AS player1, r1.rated_player_id AS player2, 
@@ -77,7 +78,8 @@ router.post('/form-teams', (req, res) => {
 
 // Get all teams for the current round
 router.get('/teams/:round', (req, res) => {
-  const { round } = req.params;
+  // Handle missing or invalid round parameter
+  const round = parseInt(req.params.round, 10) || 1;
   
   db.all(
     `SELECT t.id as team_id, t.player1_id, t.player2_id, 

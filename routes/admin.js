@@ -422,7 +422,8 @@ router.get('/admin/game-status', (req, res) => {
 
 // Start game
 router.post('/admin/start-game', (req, res) => {
-  const { round = 1 } = req.body;
+  // Handle missing round parameter with default value of 1
+  const round = parseInt(req.body.round, 10) || 1;
   
   // Create the game_state table if it doesn't exist and update it
   db.run(`
@@ -545,6 +546,62 @@ router.post('/admin/next-round', (req, res) => {
       }
     );
   });
+});
+
+// Reset round
+router.post('/admin/reset-round', (req, res) => {
+  console.log('[ADMIN RESET]: Route accessed successfully');
+  
+  // Reset the round to 1
+  db.run(
+    'UPDATE game_state SET current_round = ?, last_updated = CURRENT_TIMESTAMP WHERE id = 1',
+    [1],
+    function(err) {
+      if (err) {
+        console.error('[ADMIN RESET]: Error resetting round:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      console.log('[ADMIN RESET]: Round reset to 1');
+      
+      // Update players' round if player table has a current_round column
+      db.all("PRAGMA table_info(players)", (err, columns) => {
+        if (!err) {
+          const hasRoundColumn = columns.some(col => col.name === 'current_round');
+          if (hasRoundColumn) {
+            db.run('UPDATE players SET current_round = ? WHERE 1=1', [1], (err) => {
+              if (err) {
+                console.error('[ADMIN]: Error updating player rounds:', err.message);
+              } else {
+                console.log('[ADMIN]: Updated players to round 1');
+              }
+            });
+          }
+        }
+      });
+      
+      // Broadcast to all connected clients that the round has been reset
+      if (global.io) {
+        console.log('[ADMIN]: Broadcasting round reset to all clients');
+        global.io.emit('game_status_change', { 
+          round: 1,
+          message: 'Round has been reset to 1' 
+        });
+        
+        // Also broadcast a separate round_reset event
+        global.io.emit('round_reset', { 
+          round: 1
+        });
+      } else {
+        console.log('[ADMIN]: Socket.io not initialized, unable to broadcast');
+      }
+      
+      res.status(200).json({ 
+        message: 'Round reset to 1', 
+        round: 1 
+      });
+    }
+  );
 });
 
 module.exports = router;

@@ -61,6 +61,33 @@
   gap: 10px;
 }
 
+.round-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-warning {
+  background-color: var(--warning);
+  color: var(--dark-bg);
+  border: none;
+  border-radius: 4px;
+  padding: 10px 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background-color: #e0a800;
+  transform: translateY(-1px);
+}
+
+.btn-warning:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 @media (max-width: 768px) {
   .game-controls, .round-controls {
     flex-direction: column;

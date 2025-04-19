@@ -174,6 +174,20 @@ class AdminApiService {
     return response.json();
   }
   
+  static async resetRound() {
+    const response = await fetch(`${API_BASE_URL}/api/admin/reset-round`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
+      throw new Error(error.error || 'Failed to reset round');
+    }
+    
+    return response.json();
+  }
+  
   /**
    * Data management methods
    */

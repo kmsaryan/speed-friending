@@ -14,6 +14,11 @@ function MovingParticipant({ match, timeLeft, timerActive, currentPlayerName, cu
       ? currentPlayerName 
       : "Current Player";
 
+  // Add console logging when props change
+  React.useEffect(() => {
+    console.log(`[MovingParticipant] timeLeft updated: ${timeLeft}, timerActive: ${timerActive}`);
+  }, [timeLeft, timerActive]);
+
   return (
     <div className="participant-container moving">
       <div className="participant-card">
@@ -69,11 +74,10 @@ function MovingParticipant({ match, timeLeft, timerActive, currentPlayerName, cu
               {timerActive ? "Active" : "Waiting for Start"}
             </span>
           </div>
-          {timerActive && (
-            <div className="timer-countdown">
-              {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
-            </div>
-          )}
+          {/* Always display the timer, but make it more prominent when active */}
+          <div className={`timer-countdown ${timerActive ? 'active' : ''}`}>
+            {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
+          </div>
         </div>
 
         <IceBreakerDisplay matchId={match.matchId} />

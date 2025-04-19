@@ -28,7 +28,7 @@ function TeamBattle() {
     // Check if player is in this team
     socket.emit("get_player_team", {
       playerId,
-      round: 2 // Assuming this is for round 2
+      round: parseInt(localStorage.getItem('currentRound'), 10) || 2 // Default to round 2 for team battles
     });
     
     // Listen for team information response

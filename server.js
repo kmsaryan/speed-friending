@@ -24,7 +24,7 @@ try {
   console.error('Continuing with server startup, but some features may not work correctly.');
 }
 
-const initializeSocketServer = require('./socketServer');
+const { initializeSocketServer } = require('./socketServer');
 
 const app = express();
 const server = http.createServer(app);
@@ -44,15 +44,14 @@ const teamsRoutes = require('./routes/teams');
 const battlesRoutes = require('./routes/battles'); 
 const playerCountRoutes = require('./routes/playerCount');
 const adminRoutes = require('./routes/admin');
-const playerRoutes = require('./routes/player'); // Add this new import
+const playerRoutes = require('./routes/player');
 
-// Print available routes in admin (for debugging)
-console.log('Available admin routes:');
-adminRoutes.stack.forEach(r => {
-  if (r.route && r.route.path) {
-    console.log(`Route: ${r.route.path}`);
-  }
-});
+// Explicitly check for reset-round route and log result
+console.log('Checking admin routes for reset-round:');
+const hasResetRoute = adminRoutes.stack && adminRoutes.stack.some(
+  r => r.route && r.route.path && r.route.path.includes('reset-round')
+);
+console.log(`Reset route exists in admin routes: ${hasResetRoute ? 'Yes' : 'No'}`);
 
 // Use modular routes
 app.use('/api', registerRoutes);
@@ -61,8 +60,66 @@ app.use('/api', ratingsRoutes);
 app.use('/api', teamsRoutes);
 app.use('/api', battlesRoutes); 
 app.use('/api', playerCountRoutes);
-app.use('/api', adminRoutes);
-app.use('/api', playerRoutes); // Add this new route
+app.use('/api', adminRoutes); // This registers all admin routes
+app.use('/api', playerRoutes);
+
+// Register reset-round route directly to ensure it works
+app.post('/api/admin/reset-round', (req, res) => {
+  console.log('[SERVER]: Direct reset-round route called');
+  
+  // Forward to the handler in admin routes if it exists
+  if (hasResetRoute) {
+    console.log('[SERVER]: Forwarding to admin route handler');
+    // Let the request continue to be handled by adminRoutes
+    return next();
+  }
+  
+  // Fallback implementation if the admin route is not properly registered
+  db.run(
+    'UPDATE game_state SET current_round = ?, last_updated = CURRENT_TIMESTAMP WHERE id = 1',
+    [1],
+    function(err) {
+      if (err) {
+        console.error('[SERVER]: Error resetting round:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      console.log('[SERVER]: Round reset to 1 via fallback handler');
+      
+      // Update players' round if player table has a current_round column
+      db.all("PRAGMA table_info(players)", (err, columns) => {
+        if (!err) {
+          const hasRoundColumn = columns.some(col => col.name === 'current_round');
+          if (hasRoundColumn) {
+            db.run('UPDATE players SET current_round = ? WHERE 1=1', [1], (err) => {
+              if (err) {
+                console.error('[SERVER]: Error updating player rounds:', err.message);
+              } else {
+                console.log('[SERVER]: Updated players to round 1');
+              }
+            });
+          }
+        }
+      });
+      
+      // Broadcast to all connected clients that the round has been reset
+      if (global.io) {
+        console.log('[SERVER]: Broadcasting round reset to all clients');
+        global.io.emit('game_status_change', { 
+          round: 1,
+          message: 'Round has been reset to 1' 
+        });
+        
+        global.io.emit('round_reset', { round: 1 });
+      }
+      
+      res.status(200).json({ 
+        message: 'Round reset to 1', 
+        round: 1 
+      });
+    }
+  );
+});
 
 // Add new routes for enhanced admin functionality
 app.get('/api/admin/players', (req, res) => {
@@ -188,6 +245,13 @@ app.post('/api/admin/create-match', (req, res) => {
       }
     );
   });
+});
+
+// Add more debug logging for routes
+app.use((req, res, next) => {
+  const route = `${req.method} ${req.path}`;
+  console.log(`[SERVER]: Route accessed: ${route}`);
+  next();
 });
 
 // Add a catch-all route handler for debugging
