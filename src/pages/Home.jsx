@@ -1,6 +1,7 @@
 // File: src/pages/Home.jsx
 // This file defines the Home component, which serves as the landing page for the application.
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import PlayerRegistration from '../components/PlayerRegistration';
 import '../styles/global.css'; // Replace colors.css with global.css
 import '../styles/Home.css';
@@ -13,6 +14,7 @@ import ratingsIcon from '../asserts/ratings.svg';
 
 function Home() {
   const [showRegistration, setShowRegistration] = useState(false);
+  const [adminLinkVisible, setAdminLinkVisible] = useState(false);
 
   useEffect(() => {
     document.body.classList.add('dark-theme');
@@ -20,6 +22,22 @@ function Home() {
       document.body.classList.remove('dark-theme');
     };
   }, []);
+
+  // Toggle admin link visibility with key combination
+  const handleKeyDown = (e) => {
+    // Show admin link when user presses Ctrl + Alt + A
+    if (e.ctrlKey && e.altKey && e.key === 'a') {
+      setAdminLinkVisible(!adminLinkVisible);
+    }
+  };
+
+  // Use effect to add key listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [adminLinkVisible]);
 
   return (
     <div className="home-container">
@@ -72,6 +90,20 @@ function Home() {
       ) : (
         <PlayerRegistration />
       )}
+
+      {/* Hidden admin access - shown with keyboard shortcut */}
+      {adminLinkVisible && (
+        <div className="admin-access">
+          <Link to="/admin" className="admin-link">
+            Access Admin Panel
+          </Link>
+          <p className="admin-note">Admin access enabled. Click to enter admin panel.</p>
+        </div>
+      )}
+
+      <div className="footer-note">
+        <p>Press Ctrl+Alt+A for admin access</p>
+      </div>
     </div>
   );
 }
