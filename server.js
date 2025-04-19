@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 const { execSync } = require('child_process');
 const db = require('./database'); // Add this import for database
 
@@ -252,17 +253,37 @@ if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode - serving static files');
   const path = require('path');
   
-  // Serve static files from the React build folder
-  app.use(express.static(path.join(__dirname, 'build')));
-  
-  // Serve the React app for all other routes
-  app.get('*', (req, res) => {
-    // Skip API routes
-    if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
-      return next();
+  // Check if build directory exists
+  try {
+    if (fs.existsSync(path.join(__dirname, 'build'))) {
+      console.log('Found build directory, serving static files');
+      // Serve static files from the React build folder
+      app.use(express.static(path.join(__dirname, 'build')));
+      
+      // Serve the React app for all non-API routes
+      app.get('*', (req, res, next) => {
+        // Skip API routes
+        if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
+          return next();
+        }
+        try {
+          if (fs.existsSync(path.join(__dirname, 'build', 'index.html'))) {
+            res.sendFile(path.join(__dirname, 'build', 'index.html'));
+          } else {
+            console.error('index.html not found in build directory');
+            res.status(404).send('Frontend not built. Please run npm run build');
+          }
+        } catch (err) {
+          console.error('Error serving index.html:', err);
+          res.status(500).send('Error serving application');
+        }
+      });
+    } else {
+      console.warn('Build directory not found - frontend will not be served');
     }
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  });
+  } catch (err) {
+    console.error('Error checking for build directory:', err);
+  }
 }
 
 // Add more debug logging for routes

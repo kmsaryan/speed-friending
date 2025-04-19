@@ -11,7 +11,9 @@
     "eject": "react-scripts eject",
     "server": "node server.js",
     "migrate": "node database/migrate.js",
-    "copy-assets": "node src/utils/copyIcebreakers.js"
+    "copy-assets": "node src/utils/copyIcebreakers.js",
+    "render-build": "npm install && npm run build",
+    "render-start": "node server.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

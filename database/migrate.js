@@ -13,13 +13,32 @@ async function migrateDatabase() {
   
   // Create the database directory if it doesn't exist
   const dbDir = path.dirname(dbPath);
-  if (!fs.existsSync(dbDir)) {
-    console.log(`Creating database directory: ${dbDir}`);
-    fs.mkdirSync(dbDir, { recursive: true });
+  
+  // Don't try to create absolute directories like /data
+  if (!dbDir.startsWith('/') || dbDir.startsWith('./') || dbDir.startsWith('../')) {
+    if (!fs.existsSync(dbDir)) {
+      console.log(`Creating database directory: ${dbDir}`);
+      try {
+        fs.mkdirSync(dbDir, { recursive: true });
+      } catch (err) {
+        console.error(`Unable to create directory ${dbDir}:`, err.message);
+        console.log('Will try to use the current directory instead');
+      }
+    }
+  } else {
+    console.log(`Not attempting to create directory ${dbDir} as it's an absolute path`);
   }
   
-  // Connect to database
-  const db = new sqlite3.Database(dbPath);
+  // Connect to database - fallback to current directory if can't access specified path
+  let db;
+  try {
+    db = new sqlite3.Database(dbPath);
+    console.log(`Connected to database at: ${dbPath}`);
+  } catch (err) {
+    const fallbackPath = './speed-friending.sqlite';
+    console.error(`Failed to open database at ${dbPath}, using fallback: ${fallbackPath}`);
+    db = new sqlite3.Database(fallbackPath);
+  }
   
   // Enable logging for SQL commands
   if (process.env.NODE_ENV !== 'production') {
