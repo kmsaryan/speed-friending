@@ -5,42 +5,21 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const dbPath = process.env.DATABASE_URL || './speed-friending.sqlite';
-const schemaPath = path.join(__dirname, 'schema.sql');
-
 async function migrateDatabase() {
   console.log('Starting database migration...');
   
-  // Use project-relative path instead of absolute path
-  const dbPath = process.env.DATABASE_URL || './speed-friending.sqlite';
+  // Use a relative path that the app has access to
+  const dbPath = './speed-friending.sqlite';
   console.log(`Using database path: ${dbPath}`);
   
-  // Create the database directory if it doesn't exist and it's not an absolute path
-  const dbDir = path.dirname(dbPath);
-  
-  if (!dbDir.startsWith('/')) {
-    if (!fs.existsSync(dbDir)) {
-      console.log(`Creating database directory: ${dbDir}`);
-      try {
-        fs.mkdirSync(dbDir, { recursive: true });
-      } catch (err) {
-        console.error(`Unable to create directory ${dbDir}:`, err.message);
-        console.log('Will try to continue with current directory');
-      }
-    }
-  } else {
-    console.log(`Not creating absolute directory: ${dbDir} - using current directory instead`);
-  }
-  
-  // Connect to database - fallback to current directory if can't access specified path
+  // Connect to database directly without creating directories
   let db;
   try {
     db = new sqlite3.Database(dbPath);
     console.log(`Connected to database at: ${dbPath}`);
   } catch (err) {
-    const fallbackPath = './speed-friending.sqlite';
-    console.error(`Failed to open database at ${dbPath}, using fallback: ${fallbackPath}`);
-    db = new sqlite3.Database(fallbackPath);
+    console.error(`Failed to open database at ${dbPath}:`, err);
+    throw err;
   }
   
   // Enable logging for SQL commands
@@ -49,6 +28,15 @@ async function migrateDatabase() {
       console.log('[SQL]:', sql);
     });
   }
+  
+  const schemaPath = path.join(__dirname, 'schema.sql');
+  if (!fs.existsSync(schemaPath)) {
+    console.error(`Schema file not found at ${schemaPath}`);
+    throw new Error(`Schema file not found at ${schemaPath}`);
+  }
+  
+  console.log(`Reading schema from: ${schemaPath}`);
+  const schemaSQL = fs.readFileSync(schemaPath, 'utf8');
   
   try {
     // Begin transaction
@@ -60,10 +48,11 @@ async function migrateDatabase() {
         db.run('PRAGMA foreign_keys = OFF');
         
         // Run the schema script which has CREATE TABLE IF NOT EXISTS statements
-        db.exec(fs.readFileSync(schemaPath, 'utf8'), (err) => {
+        db.exec(schemaSQL, (err) => {
           if (err) {
             console.error('Error in initial schema application:', err.message);
-            // Continue with migration even if there's an error, as we'll try to fix it
+            reject(err);
+            return;
           }
           
           console.log('Base schema applied, checking for required columns...');
@@ -77,6 +66,7 @@ async function migrateDatabase() {
     console.log('Database migration completed successfully.');
   } catch (error) {
     console.error('Error during database migration:', error);
+    throw error;
   } finally {
     // Close the database connection
     db.close((err) => {
@@ -217,4 +207,7 @@ function checkMatchesTable(db, resolve, reject) {
 }
 
 // Run the migration
-migrateDatabase();
+migrateDatabase().catch(err => {
+  console.error('Migration failed:', err);
+  process.exit(1);
+});

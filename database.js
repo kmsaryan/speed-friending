@@ -1,14 +1,23 @@
 const sqlite3 = require('sqlite3').verbose();
-const dotenv = require('dotenv');
+const path = require('path');
 
-dotenv.config();
+// Use a simple file path that's writable in the Render environment
+const dbPath = './speed-friending.sqlite';
 
-const db = new sqlite3.Database(process.env.DATABASE_URL, (err) => {
-  if (err) {
-    console.error('Error connecting to the database:', err.message);
-  } else {
-    console.log('Connected to the SQLite database.');
-  }
-});
+console.log(`Opening database at path: ${dbPath}`);
+let db;
+
+try {
+  // Create a new database connection
+  db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Error connecting to the database:', err.message);
+    } else {
+      console.log('Connected to the SQLite database.');
+    }
+  });
+} catch (error) {
+  console.error('Exception during database connection:', error);
+}
 
 module.exports = db;

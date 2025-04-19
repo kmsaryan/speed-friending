@@ -12,5 +12,7 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: FRONTEND_URL
+        value: "https://speed-friending.onrender.com"
       - key: REACT_APP_BACKEND_URL
         value: "https://speed-friending.onrender.com"
