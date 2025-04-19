@@ -12,6 +12,19 @@ const db = require('./database'); // Add this import for database
 
 dotenv.config();
 
+// Make sure the database directory exists before migration
+const dbDir = path.dirname(process.env.DATABASE_URL || './speed-friending.sqlite');
+if (!dbDir.startsWith('/')) {
+  if (!fs.existsSync(dbDir)) {
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log(`Created database directory: ${dbDir}`);
+    } catch (err) {
+      console.error(`Error creating database directory: ${err.message}`);
+    }
+  }
+}
+
 // Run database migration before starting the server
 console.log('Running database migration...');
 try {
@@ -251,38 +264,45 @@ app.post('/api/admin/create-match', (req, res) => {
 // Add this section before the last app.use() (the 404 handler)
 if (process.env.NODE_ENV === 'production') {
   console.log('Running in production mode - serving static files');
-  const path = require('path');
   
   // Check if build directory exists
   try {
-    if (fs.existsSync(path.join(__dirname, 'build'))) {
-      console.log('Found build directory, serving static files');
-      // Serve static files from the React build folder
-      app.use(express.static(path.join(__dirname, 'build')));
+    const buildPath = path.join(__dirname, 'build');
+    if (fs.existsSync(buildPath)) {
+      console.log(`Found build directory at ${buildPath}`);
       
-      // Serve the React app for all non-API routes
+      // Serve static files from the React build folder
+      app.use(express.static(buildPath));
+      
+      // Serve the React app for all other routes
       app.get('*', (req, res, next) => {
         // Skip API routes
         if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
           return next();
         }
-        try {
-          if (fs.existsSync(path.join(__dirname, 'build', 'index.html'))) {
-            res.sendFile(path.join(__dirname, 'build', 'index.html'));
-          } else {
-            console.error('index.html not found in build directory');
-            res.status(404).send('Frontend not built. Please run npm run build');
-          }
-        } catch (err) {
-          console.error('Error serving index.html:', err);
-          res.status(500).send('Error serving application');
+        
+        const indexPath = path.join(buildPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          console.error(`Index file not found at ${indexPath}`);
+          res.status(404).send('Frontend not built. Index.html not found.');
         }
       });
     } else {
-      console.warn('Build directory not found - frontend will not be served');
+      console.warn(`Build directory not found at ${buildPath}`);
+      
+      // Try serving from public directory as fallback
+      const publicPath = path.join(__dirname, 'public');
+      if (fs.existsSync(publicPath)) {
+        console.log(`Serving from public directory at ${publicPath}`);
+        app.use(express.static(publicPath));
+      } else {
+        console.warn('Public directory also not found');
+      }
     }
   } catch (err) {
-    console.error('Error checking for build directory:', err);
+    console.error('Error setting up static file serving:', err);
   }
 }
 

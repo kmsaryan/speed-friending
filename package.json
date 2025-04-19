@@ -13,7 +13,8 @@
     "migrate": "node database/migrate.js",
     "copy-assets": "node src/utils/copyIcebreakers.js",
     "render-build": "npm install && npm run build",
-    "render-start": "node server.js"
+    "render-start": "node server.js",
+    "prepare-deployment": "npm install && npm run build && cp -r build/* public/"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

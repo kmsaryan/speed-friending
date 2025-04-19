@@ -7,17 +7,10 @@ services:
     startCommand: npm run render-start
     envVars:
       - key: DATABASE_URL
-        value: "./data/speed-friending.sqlite"
+        value: "./speed-friending.sqlite"
       - key: NODE_ENV
         value: production
-      - key: FRONTEND_URL
-        value: "https://speed-friending.onrender.com"
+      - key: PORT
+        value: 10000
       - key: REACT_APP_BACKEND_URL
         value: "https://speed-friending.onrender.com"
-    buildFilter:
-      paths:
-      - src/**
-      - public/**
-      - server.js
-      - database/**
-      - routes/**

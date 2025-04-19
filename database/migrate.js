@@ -11,22 +11,25 @@ const schemaPath = path.join(__dirname, 'schema.sql');
 async function migrateDatabase() {
   console.log('Starting database migration...');
   
-  // Create the database directory if it doesn't exist
+  // Use project-relative path instead of absolute path
+  const dbPath = process.env.DATABASE_URL || './speed-friending.sqlite';
+  console.log(`Using database path: ${dbPath}`);
+  
+  // Create the database directory if it doesn't exist and it's not an absolute path
   const dbDir = path.dirname(dbPath);
   
-  // Don't try to create absolute directories like /data
-  if (!dbDir.startsWith('/') || dbDir.startsWith('./') || dbDir.startsWith('../')) {
+  if (!dbDir.startsWith('/')) {
     if (!fs.existsSync(dbDir)) {
       console.log(`Creating database directory: ${dbDir}`);
       try {
         fs.mkdirSync(dbDir, { recursive: true });
       } catch (err) {
         console.error(`Unable to create directory ${dbDir}:`, err.message);
-        console.log('Will try to use the current directory instead');
+        console.log('Will try to continue with current directory');
       }
     }
   } else {
-    console.log(`Not attempting to create directory ${dbDir} as it's an absolute path`);
+    console.log(`Not creating absolute directory: ${dbDir} - using current directory instead`);
   }
   
   // Connect to database - fallback to current directory if can't access specified path
