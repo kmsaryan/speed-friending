@@ -69,8 +69,6 @@ const initializeSocketServer = (server) => {
   const socketToPlayer = new Map();
   // Track players currently in matching process to avoid duplicate matches
   const matchingInProgress = new Set();
-  // Add a map to store timer states for matches
-  const matchTimers = new Map();
 
   io.on("connection", (socket) => {
     console.log(`[SOCKET LOG]: Player connected with ID: ${socket.id}`);
@@ -238,10 +236,10 @@ const initializeSocketServer = (server) => {
                         if (err) {
                           console.error(`[SOCKET LOG]: Error inserting match: ${err.message}`);
                         } else {
-                          const matchId = this.lastID; // Store matchId in a local variable
+                          const matchId = this.lastID;
                           console.log(`[SOCKET LOG]: Match recorded with ID: ${matchId}`);
                           
-                          // Create a unique room for this match
+                          // Create a match room name
                           const matchRoom = `match_${matchId}`;
                           
                           // Find the socket for the matched player
@@ -253,23 +251,17 @@ const initializeSocketServer = (server) => {
                             }
                           }
                           
-                          // Join both players to the match room
+                          // Add both sockets to the match room
                           socket.join(matchRoom);
                           if (matchedSocket) {
-                            io.sockets.sockets.get(matchedSocket)?.join(matchRoom);
-                            console.log(`[SOCKET LOG]: Both players joined room ${matchRoom}`);
+                            const matchedSocketObj = io.sockets.sockets.get(matchedSocket);
+                            if (matchedSocketObj) {
+                              matchedSocketObj.join(matchRoom);
+                              console.log(`[SOCKET LOG]: Created match room ${matchRoom} with both players`);
+                            }
                           }
                           
-                          // Broadcast match created event to admin panels
-                          if (global.io) {
-                            global.io.emit('match_created', { 
-                              matchId: matchId,
-                              player1Id: playerId, 
-                              player2Id: match.id
-                            });
-                          }
-                          
-                          // Send complete match details to the current player
+                          // Send complete match details to the current player WITH the matchId
                           socket.emit("match_found", {
                             id: match.id,
                             name: match.name,
@@ -279,10 +271,10 @@ const initializeSocketServer = (server) => {
                             playerType: match.playerType,
                             tableNumber: match.tableNumber,
                             round: currentRound,
-                            matchId: matchId // Use the local variable here
+                            matchId: matchId  // Include the match ID in the response
                           });
                           
-                          // Find the socket for the matched player
+                          // If we found the socket, notify the matched player WITH the matchId
                           if (matchedSocket) {
                             io.to(matchedSocket).emit("match_found", {
                               id: currentPlayer.id,
@@ -293,12 +285,21 @@ const initializeSocketServer = (server) => {
                               playerType: currentPlayer.playerType,
                               tableNumber: currentPlayer.tableNumber,
                               round: currentRound,
-                              matchId: matchId // Also send matchId to the matched player
+                              matchId: matchId  // Include the match ID in the response
                             });
                             
-                            console.log(`[SOCKET LOG]: Notified matched player at socket ${matchedSocket} with matchId ${matchId}`);
+                            console.log(`[SOCKET LOG]: Notified matched player at socket ${matchedSocket}`);
                           } else {
                             console.log(`[SOCKET LOG]: Matched player (ID: ${match.id}) not connected via socket`);
+                          }
+                          
+                          // Broadcast match created event to admin panels
+                          if (global.io) {
+                            global.io.emit('match_created', { 
+                              matchId: matchId,
+                              player1Id: playerId, 
+                              player2Id: match.id
+                            });
                           }
                           
                           // Remove player from matching in progress
@@ -407,157 +408,20 @@ const initializeSocketServer = (server) => {
       io.to(to).emit("chat_message", { from: socket.id, message });
     });
 
-    // Handle timer controls
+    // Handle timer controls - improved room-based broadcasting
     socket.on("timer_control", (data) => {
-      const { matchId, action, timeLeft, senderId } = data;
-
+      const { matchId, action, timeLeft } = data;
+      
       if (!matchId) {
-        console.error(`[SOCKET LOG]: Timer control failed. matchId is null.`);
+        console.error("[SOCKET LOG]: Timer control missing matchId:", data);
         return;
       }
-
+      
       const matchRoom = `match_${matchId}`;
       console.log(`[SOCKET LOG]: Timer control for room ${matchRoom}. Action: ${action}, Time Left: ${timeLeft}`);
-
-      // Check if the room exists
-      const room = io.sockets.adapter.rooms.get(matchRoom);
-      if (!room || room.size === 0) {
-        console.error(`[SOCKET LOG]: Room ${matchRoom} does not exist or is empty.`);
-        
-        // Try to recover by broadcasting to all sockets with this player's match ID
-        let foundMatch = false;
-        for (const [socketId, socketData] of socketToPlayer.entries()) {
-          if (socketData.currentMatchId && socketData.currentMatchId == matchId) {
-            io.to(socketId).emit("timer_update", { 
-              action, 
-              timeLeft,
-              matchId,
-              senderId 
-            });
-            foundMatch = true;
-            console.log(`[SOCKET LOG]: Directly emitted timer update to socket ${socketId}`);
-          }
-        }
-        
-        if (!foundMatch) {
-          console.error(`[SOCKET LOG]: Could not find any sockets for match ${matchId}`);
-        }
-        
-        return;
-      }
-
-      // Store timer state for late joiners
-      if (action === 'start' || action === 'sync') {
-        matchTimers.set(matchId, {
-          timeLeft,
-          isActive: action === 'start',
-          lastUpdated: Date.now()
-        });
-      }
-
-      // Broadcast timer updates to the room including the original sender ID
-      io.to(matchRoom).emit("timer_update", { 
-        action, 
-        timeLeft,
-        matchId,
-        senderId
-      });
       
-      console.log(`[SOCKET LOG]: Broadcasted timer update to room ${matchRoom} with ${room.size} clients`);
-    });
-
-    // Handle requests for timer sync
-    socket.on("request_timer_sync", (data) => {
-      const { matchId } = data;
-      
-      if (!matchId) return;
-      
-      const timerState = matchTimers.get(matchId);
-      if (timerState) {
-        // Calculate time elapsed since last update
-        const elapsed = (Date.now() - timerState.lastUpdated) / 1000;
-        let currentTime = timerState.timeLeft;
-        
-        // If timer is active, subtract elapsed time
-        if (timerState.isActive) {
-          currentTime = Math.max(0, currentTime - Math.floor(elapsed));
-        }
-        
-        socket.emit("timer_update", {
-          action: timerState.isActive ? 'start' : 'sync',
-          timeLeft: currentTime,
-          matchId,
-          senderId: 'server'
-        });
-        
-        console.log(`[SOCKET LOG]: Sent timer sync to socket ${socket.id} for match ${matchId}`);
-      }
-    });
-
-    // Handle heartbeats to keep connection alive
-    socket.on("heartbeat", (data) => {
-      // Simply acknowledge receipt - this keeps the connection alive
-      socket.emit("heartbeat_ack", { received: true, serverTime: Date.now() });
-    });
-
-    // Handle room joining
-    socket.on("join_room", (data) => {
-      const { roomId } = data;
-      if (!roomId) return;
-      
-      console.log(`[SOCKET LOG]: Socket ${socket.id} joining room: ${roomId}`);
-      socket.join(roomId);
-      
-      // If this is a match room, send current timer state
-      if (roomId.startsWith('match_')) {
-        const matchId = roomId.replace('match_', '');
-        
-        // Get players in this room
-        const room = io.sockets.adapter.rooms.get(roomId);
-        if (room) {
-          console.log(`[SOCKET LOG]: Room ${roomId} has ${room.size} members`);
-        }
-      }
-    });
-
-    // Handle room leaving
-    socket.on("leave_room", (data) => {
-      const { roomId } = data;
-      if (!roomId) return;
-      
-      console.log(`[SOCKET LOG]: Socket ${socket.id} leaving room: ${roomId}`);
-      socket.leave(roomId);
-    });
-
-    // Handle match ending
-    socket.on("end_match", (data) => {
-      const { matchId, playerId } = data;
-
-      if (!matchId || !playerId) {
-        console.error(`[SOCKET LOG]: Cannot end match. matchId or playerId is null.`);
-        return;
-      }
-
-      console.log(`[SOCKET LOG]: Ending match with ID: ${matchId} for player: ${playerId}`);
-
-      // Update the player's status to "available"
-      db.run('UPDATE players SET status = ? WHERE id = ?', ['available', playerId], (err) => {
-        if (err) {
-          console.error(`[SOCKET LOG]: Error updating player status to available: ${err.message}`);
-        } else {
-          console.log(`[SOCKET LOG]: Player ${playerId} status updated to available.`);
-          io.emit("player_status_updated"); // Notify all clients
-        }
-      });
-
-      // Remove the match from the live match table
-      db.run('DELETE FROM matches WHERE id = ?', [matchId], (err) => {
-        if (err) {
-          console.error(`[SOCKET LOG]: Error deleting match with ID ${matchId}: ${err.message}`);
-        } else {
-          console.log(`[SOCKET LOG]: Match with ID ${matchId} ended and removed.`);
-        }
-      });
+      // Broadcast to the specific match room (including the sender for consistency)
+      io.in(matchRoom).emit("timer_update", { action, timeLeft });
     });
 
     // Handle disconnection

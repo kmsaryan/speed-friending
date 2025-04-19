@@ -1,36 +1,12 @@
 //MovingParticipant.jsx
 // File: src/components/MovingParticipant.jsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import '../styles/global.css';
 import '../styles/Participant.css';
 import walkIcon from '../asserts/walk.svg';
 import timerIcon from '../asserts/timer.svg';
-import timerSyncService from '../utils/timerSyncService';
 
 function MovingParticipant({ match, timeLeft, timerActive }) {
-  const [currentTimeLeft, setCurrentTimeLeft] = useState(timeLeft);
-  const [localTimerActive, setLocalTimerActive] = useState(timerActive);
-
-  // Listen for timer updates directly from the timer service
-  useEffect(() => {
-    const unsubscribe = timerSyncService.addListener(timerState => {
-      setCurrentTimeLeft(timerState.timeLeft);
-      setLocalTimerActive(timerState.isActive);
-    });
-    
-    // Always initialize with current values
-    setCurrentTimeLeft(timeLeft);
-    setLocalTimerActive(timerActive);
-    
-    return () => unsubscribe();
-  }, [match.matchId]);
-  
-  // Also update when props change (as a fallback)
-  useEffect(() => {
-    setCurrentTimeLeft(timeLeft);
-    setLocalTimerActive(timerActive);
-  }, [timeLeft, timerActive]);
-
   return (
     <div className="participant-container moving">
       <div className="participant-card">
@@ -58,14 +34,22 @@ function MovingParticipant({ match, timeLeft, timerActive }) {
         </div>
         
         <div className="timer-status-container">
+          <div className="timer-icon-container">
+            <img src={timerIcon} alt="Timer" className="timer-icon" />
+          </div>
+          <p className="timer-instruction">
+            The stationary player controls the conversation timer.
+          </p>
           <div className="timer-status">
-            Timer Status: <span className={localTimerActive ? "status-active" : "status-inactive"}>
-              {localTimerActive ? "Active" : "Waiting for Start"}
+            Timer Status: <span className={timerActive ? "status-active" : "status-inactive"}>
+              {timerActive ? "Active" : "Waiting for Start"}
             </span>
           </div>
-          <div className="timer-countdown">
-            {Math.floor(currentTimeLeft / 60)}:{currentTimeLeft % 60 < 10 ? '0' : ''}{currentTimeLeft % 60}
-          </div>
+          {timerActive && (
+            <div className="timer-countdown">
+              {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
+            </div>
+          )}
         </div>
 
         <div className="instruction">

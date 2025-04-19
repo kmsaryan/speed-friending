@@ -7,7 +7,7 @@ import '../styles/Participant.css';
 import deskIcon from '../asserts/Stationary.svg';
 import timerIcon from '../asserts/timer.svg';
 
-function StationaryParticipant({ match, timeLeft, timerActive, toggleTimer }) {
+function StationaryParticipant({ match, timeLeft, timerActive }) {
   return (
     <div className="participant-container stationary">
       <div className="participant-card">
@@ -35,32 +35,23 @@ function StationaryParticipant({ match, timeLeft, timerActive, toggleTimer }) {
             <img src={timerIcon} alt="Timer" className="timer-icon" />
           </div>
           <p className="timer-instruction">
-            Either player can start or pause the timer for this conversation.
+            As the stationary player, you control the conversation timer.
           </p>
-          <div className="timer-controls">
-            <button
-              onClick={toggleTimer}
-              className={timerActive ? "btn-warning btn-rounded" : "btn-success btn-rounded"}
-            >
-              {timerActive ? "Pause Timer" : "Start Interaction"}
-            </button>
+          <div className="timer-status">
+            Timer Status: <span className={timerActive ? "status-active" : "status-inactive"}>
+              {timerActive ? "Active" : "Inactive"}
+            </span>
           </div>
           {timerActive && (
             <div className="timer-countdown">
               {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
             </div>
           )}
-          <div className="timer-status">
-            Timer Status: <span className={timerActive ? "status-active" : "status-inactive"}>
-              {timerActive ? "Active" : "Inactive"}
-            </span>
-          </div>
         </div>
 
         <div className="instruction">
           <p>Your match will come to your table. Please stay at your position.</p>
           <p>After your conversation, you'll be asked to rate your interaction.</p>
-          <p><strong>Once the timer ends, click "End Match" to make yourself available for the next match.</strong></p>
         </div>
       </div>
     </div>

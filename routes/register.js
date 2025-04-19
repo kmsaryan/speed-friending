@@ -26,25 +26,4 @@ router.post('/register', (req, res) => {
   );
 });
 
-router.post('/register', (req, res) => {
-  const { playerType } = req.body;
-
-  if (!playerType) {
-    return res.status(400).json({ error: 'Player type is required' });
-  }
-
-  db.run(
-    `INSERT INTO players (playerType, status) VALUES (?, 'available')`,
-    [playerType],
-    function(err) {
-      if (err) {
-        console.error('[REGISTER]: Error registering player:', err.message);
-        return res.status(500).json({ error: 'Database error' });
-      }
-
-      res.status(201).json({ playerId: this.lastID });
-    }
-  );
-});
-
 module.exports = router;

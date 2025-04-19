@@ -1,18 +1,12 @@
--- Players Table: Enhanced to track player progress and stats
 CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     gender TEXT,
     interests TEXT,
     preferences TEXT,
-    playerType TEXT NOT NULL, -- stationary or moving
-    tableNumber TEXT, -- For stationary players
-    status TEXT DEFAULT 'available', -- available, matched, etc.
-    current_round INTEGER DEFAULT 1, -- Current round the player is in
-    total_matches INTEGER DEFAULT 0, -- Total matches participated in
-    total_ratings INTEGER DEFAULT 0, -- Total ratings given
-    total_wins INTEGER DEFAULT 0, -- Total wins in team battles
-    last_action TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Last action timestamp
+    playerType TEXT NOT NULL, -- Column to differentiate between stationary and moving players
+    tableNumber TEXT, -- Column to store the table number for stationary players
+    status TEXT DEFAULT 'available' -- Column to track player availability (e.g., 'available', 'matched')
 );
 
 -- Indexes for faster player lookups and matching
@@ -20,26 +14,6 @@ CREATE INDEX IF NOT EXISTS idx_playerType ON players (playerType);
 CREATE INDEX IF NOT EXISTS idx_status ON players (status);
 CREATE INDEX IF NOT EXISTS idx_player_type_status ON players (playerType, status); -- New index for faster queries
 
--- Player Actions Table: Logs all player actions
-CREATE TABLE IF NOT EXISTS player_actions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id INTEGER NOT NULL,
-    action_type TEXT NOT NULL, -- e.g., match, rate, team_form, battle
-    action_details TEXT, -- JSON or text to store action-specific details
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (player_id) REFERENCES players(id)
-);
-
--- Game Rounds Table: Defines and tracks game rounds
-CREATE TABLE IF NOT EXISTS game_rounds (
-    round_number INTEGER PRIMARY KEY,
-    round_type TEXT NOT NULL, -- e.g., speed_friending, team_battle
-    status TEXT DEFAULT 'pending', -- pending, active, completed
-    start_time TIMESTAMP,
-    end_time TIMESTAMP
-);
-
--- Ratings Table
 CREATE TABLE IF NOT EXISTS ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id INTEGER NOT NULL, -- The player giving the rating
@@ -56,7 +30,6 @@ CREATE TABLE IF NOT EXISTS ratings (
 CREATE INDEX IF NOT EXISTS idx_ratings_players ON ratings (player_id, rated_player_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_round ON ratings (round);
 
--- Matches Table
 CREATE TABLE IF NOT EXISTS matches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id INTEGER NOT NULL,
@@ -73,7 +46,6 @@ CREATE INDEX IF NOT EXISTS idx_matches_players ON matches (player_id, matched_pl
 CREATE INDEX IF NOT EXISTS idx_matches_player_round ON matches (player_id, round);
 CREATE INDEX IF NOT EXISTS idx_matches_matched_round ON matches (matched_player_id, round);
 
--- Admins Table
 CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
@@ -85,16 +57,13 @@ INSERT OR IGNORE INTO admins (username, password)
 VALUES ('admin', '$2b$10$yVlq.b5yW7r9kAJ9oIQfBeY4WV3YFdMc0GwluM1PxoLUD9UMVwn2O');
 -- This is bcrypt hash for 'password' - change in production!
 
--- Teams Table: Enhanced to track team performance
 CREATE TABLE IF NOT EXISTS teams (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player1_id INTEGER NOT NULL,
     player2_id INTEGER NOT NULL,
     round INTEGER NOT NULL,
     compatibility_score REAL,
-    total_battles INTEGER DEFAULT 0, -- Total battles participated in
-    wins INTEGER DEFAULT 0, -- Total wins
-    losses INTEGER DEFAULT 0, -- Total losses
+    battle_score INTEGER DEFAULT 0,
     FOREIGN KEY (player1_id) REFERENCES players(id),
     FOREIGN KEY (player2_id) REFERENCES players(id)
 );
@@ -103,7 +72,6 @@ CREATE TABLE IF NOT EXISTS teams (
 CREATE INDEX IF NOT EXISTS idx_teams_round ON teams (round);
 CREATE INDEX IF NOT EXISTS idx_teams_players ON teams (player1_id, player2_id);
 
--- Team Battles Table
 CREATE TABLE IF NOT EXISTS team_battles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     team1_id INTEGER NOT NULL,
@@ -116,12 +84,11 @@ CREATE TABLE IF NOT EXISTS team_battles (
     FOREIGN KEY (winner_id) REFERENCES teams(id)
 );
 
--- Game State Table: Tracks global game progress
+-- Create game_state table to track game status and current round
 CREATE TABLE IF NOT EXISTS game_state (
-    id INTEGER PRIMARY KEY CHECK (id = 1), -- Ensures only one record
-    status TEXT NOT NULL DEFAULT 'stopped', -- running, stopped
+    id INTEGER PRIMARY KEY CHECK (id = 1), -- Ensures only one game state record
+    status TEXT NOT NULL DEFAULT 'stopped', -- 'running' or 'stopped'
     current_round INTEGER NOT NULL DEFAULT 1,
-    active_players INTEGER DEFAULT 0, -- Number of active players
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

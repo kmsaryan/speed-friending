@@ -1,9 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import socket from "../utils/socket";
-import { socketManager } from "../utils/socket";
-import playerManager from "../utils/playerManager";
-import timerSyncService from "../utils/timerSyncService";
 import "../styles/global.css"; // Replace colors.css import with global.css
 import "../styles/Matching.css";
 import StationaryParticipant from "../components/StationaryParticipant";
@@ -14,7 +11,6 @@ function Matching() {
   const [match, setMatch] = useState(null);
   const [message, setMessage] = useState("Finding the best match for you...");
   const { playerType } = useParams();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(180); // 3 minutes in seconds
   const [timerActive, setTimerActive] = useState(false);
@@ -25,7 +21,6 @@ function Matching() {
     wouldChatAgain: true
   });
   const [matchId, setMatchId] = useState(null); // Add match ID state
-  const [matchEnded, setMatchEnded] = useState(false); // Track if the match has ended
   
   // Store player ID locally
   const [playerId, setPlayerId] = useState(() => {
@@ -62,19 +57,27 @@ function Matching() {
       console.log("Match data received:", matchData);
       setMatch(matchData);
       
-      // If the server provides a match ID, store it
+      // Fix: store the match ID properly, it could be in matchId or id field
       if (matchData.matchId) {
-        console.log("Match ID set:", matchData.matchId);
         setMatchId(matchData.matchId);
-      } else {
-        console.warn("No matchId received in match_found event");
+      } else if (matchData.id) {
+        // This is a fallback - find the match ID from the socket server response
+        db.get(
+          'SELECT id FROM matches WHERE (player_id = ? AND matched_player_id = ?) OR (player_id = ? AND matched_player_id = ?)',
+          [playerId, matchData.id, matchData.id, playerId],
+          (err, match) => {
+            if (!err && match) {
+              setMatchId(match.id);
+              console.log("Found match ID from database:", match.id);
+            }
+          }
+        );
       }
       
       setMessage("Match found!");
       setLoading(false);
       setTimeLeft(180); // Reset timer when match is found
       setShowRating(false);
-      setMatchEnded(false); // Reset match ended state
     });
 
     socket.on("no_match", (msg) => {
@@ -143,84 +146,67 @@ function Matching() {
     };
   }, [playerType, match]);
 
-  // Use the timer sync service
+  // Timer effect - Synchronize timer across both players
   useEffect(() => {
-    if (match && matchId) {
-      // Initialize timer service with match ID
-      timerSyncService.initializeTimer(matchId, 180);
-      
-      // Listen for timer updates
-      const unsubscribe = timerSyncService.addListener(timerState => {
-        setTimeLeft(timerState.timeLeft);
-        setTimerActive(timerState.isActive);
-        
-        if (timerState.timedOut) {
-          setShowRating(true);
-        }
-      });
-      
-      // Clean up timer when unmounting or changing match
-      return () => {
-        unsubscribe();
-        timerSyncService.cleanup();
-      };
-    }
-  }, [match, matchId]);
+    let interval = null;
 
-  const toggleTimer = useCallback(() => {
-    if (!matchId) {
-      console.error("Cannot toggle timer. matchId is null.");
-      return;
-    }
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((seconds) => {
+          const newValue = seconds - 1;
 
-    const isNowActive = timerSyncService.toggleTimer();
-    setTimerActive(isNowActive);
-  }, [matchId]);
+          // Send sync updates every second to keep moving player in sync
+          // Only do this if we have a valid matchId
+          if (playerType === 'stationary' && newValue > 0 && matchId) {
+            console.log(`Sending timer sync to match room ${matchId}, time: ${newValue}`);
+            socket.emit("timer_control", {
+              matchId: matchId,
+              action: 'sync',
+              timeLeft: newValue,
+            });
+          }
 
-  const endMatch = async () => {
-    if (!matchId) {
-      console.error("Cannot end match. matchId is null.");
-      return;
+          return newValue;
+        });
+      }, 1000);
+    } else if (timerActive && timeLeft === 0) {
+      setTimerActive(false);
+      setShowRating(true);
+
+      // Notify the other player that time is up
+      if (playerType === 'stationary' && matchId) {
+        socket.emit("timer_control", {
+          matchId: matchId,
+          action: 'timeout',
+          timeLeft: 0,
+        });
+      }
     }
 
-    try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/admin/end-match/${matchId}`, {
-        method: 'POST',
-      });
+    return () => clearInterval(interval);
+  }, [timerActive, timeLeft, playerType, matchId]);
 
-      if (response.ok) {
-        console.log("Match ended successfully.");
-        setMatch(null);
-        setMatchId(null);
-        setMatchEnded(true); // Mark the match as ended
+  // Listen for timer updates from the room
+  useEffect(() => {
+    socket.on("timer_update", (data) => {
+      console.log("Received timer update:", data);
+
+      if (data.action === "start") {
+        setTimerActive(true);
+        setTimeLeft(data.timeLeft);
+      } else if (data.action === "pause") {
         setTimerActive(false);
-        setTimeLeft(180); // Reset timer
-        setMessage("You are now available for matching.");
-      } else {
-        console.error("Failed to end match:", await response.json());
+      } else if (data.action === "timeout") {
+        setTimerActive(false);
+        setTimeLeft(0);
+        setShowRating(true);
       }
-    } catch (error) {
-      console.error("Error ending match:", error);
-    }
-  };
+    });
 
-  // Add connection status indicator
-  useEffect(() => {
-    const handleConnectionChange = (connected) => {
-      if (!connected) {
-        setMessage(prevMessage => `${prevMessage} (Disconnected from server, trying to reconnect...)`);
-      } else if (message.includes('Disconnected')) {
-        // Remove disconnection message if reconnected
-        setMessage(message.replace(' (Disconnected from server, trying to reconnect...)', ''));
-      }
-    };
-    
-    socketManager.on('connectionChange', handleConnectionChange);
-    
     return () => {
-      socketManager.removeListener('connectionChange', handleConnectionChange);
+      socket.off("timer_update");
     };
-  }, [message]);
+  }, []);
 
   // Add socket listener for new available players
   useEffect(() => {
@@ -239,6 +225,23 @@ function Matching() {
       socket.off("new_players_available");
     };
   }, [match, showRating, loading]);
+
+  // Update toggleTimer function to emit timer events to the room
+  const toggleTimer = () => {
+    const newTimerState = !timerActive;
+    setTimerActive(newTimerState);
+
+    if (matchId) {
+      console.log(`Toggling timer for match ${matchId}: ${newTimerState ? "start" : "pause"}`);
+      socket.emit("timer_control", {
+        matchId: matchId,
+        action: newTimerState ? "start" : "pause",
+        timeLeft: timeLeft,
+      });
+    } else {
+      console.warn("Cannot toggle timer: No match ID available");
+    }
+  };
 
   const handleRatingChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -271,14 +274,17 @@ function Matching() {
       });
       
       if (response.ok) {
-        setMessage("Rating submitted! Preparing for the next round...");
+        setMessage("Rating submitted! Looking for your next match...");
         setShowRating(false);
         
-        // Complete the current round
-        await playerManager.completeRound();
-
-        // Redirect to the next round
-        playerManager.redirectToNextRound(navigate);
+        // Emit event to update server about the rating submission
+        socket.emit("submit_rating", {
+          playerId: actualPlayerId,
+          ratedPlayerId: match.id,
+          round: match.round || 1
+        });
+        
+        retryMatch();
       }
     } catch (error) {
       console.error("Error submitting rating:", error);
@@ -341,38 +347,41 @@ function Matching() {
   return (
     <div className="matching-container">
       <h2 className="match-header">You've been matched!</h2>
-
+      
+      {/* Only stationary players can control the timer */}
+      {playerType === 'stationary' && (
+        <div className="timer-controls">
+          <button
+            onClick={toggleTimer}
+            className={timerActive ? "btn-warning btn-rounded" : "btn-success btn-rounded"}
+          >
+            {timerActive ? "Pause Timer" : "Start Interaction"}
+          </button>
+        </div>
+      )}
+      
       <div className="timer-display">
-        Time Left: {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? "0" : ""}{timeLeft % 60}
+        Time Left: {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
       </div>
 
-      {playerType === "stationary" ? (
-        <StationaryParticipant
-          match={match}
-          timeLeft={timeLeft}
-          timerActive={timerActive}
-          toggleTimer={toggleTimer}
+      {playerType === 'stationary' ? (
+        <StationaryParticipant 
+          match={match} 
+          timeLeft={timeLeft} 
+          timerActive={timerActive} 
         />
       ) : (
-        <MovingParticipant
-          match={match}
-          timeLeft={timeLeft}
-          timerActive={timerActive}
+        <MovingParticipant 
+          match={match} 
+          timeLeft={timeLeft} 
+          timerActive={timerActive} 
         />
       )}
 
       <button
-        onClick={endMatch}
-        className="btn-danger btn-rounded"
-        disabled={!timerActive || matchEnded} // Disable if timer is not active or match is already ended
-      >
-        End Match
-      </button>
-
-      <button
         onClick={retryMatch}
         className="btn-primary btn-rounded"
-        disabled={!!match || !matchEnded} // Disable if in a match or match is not ended
+        disabled={timerActive}
       >
         Find New Match
       </button>

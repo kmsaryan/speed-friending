@@ -28,8 +28,9 @@ const ConnectionStatus = () => {
     const socket = socketManager.getSocket();
     if (socket) {
       socket.on('heartbeat_ack', (data) => {
-        const rtt = Date.now() - data.serverTime;
-        setLastPing(rtt);
+        if (data.timeDiff) {
+          setLastPing(data.timeDiff);
+        }
       });
       
       // Monitor match ID changes

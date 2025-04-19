@@ -1,0 +1,159 @@
+.synced-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 15px 0;
+}
+
+.timer-display {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  padding: 15px 25px;
+  margin-bottom: 10px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.timer-display.active {
+  border-color: rgba(0, 255, 200, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 200, 0.3);
+}
+
+.timer-display.paused {
+  border-color: rgba(255, 180, 0, 0.5);
+}
+
+.time {
+  font-size: 2.2rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 255, 200, 0.7);
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+}
+
+.sync-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 5px;
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: pulse 1.5s infinite;
+}
+
+.sync-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Sync status indicators */
+.sync-indicator.synced .sync-dot {
+  background-color: #4CAF50;
+  box-shadow: 0 0 5px #4CAF50;
+  animation: none;
+}
+
+.sync-indicator.syncing .sync-dot {
+  background-color: #FFC107;
+  box-shadow: 0 0 5px #FFC107;
+}
+
+.sync-indicator.drifting .sync-dot {
+  background-color: #F44336;
+  box-shadow: 0 0 5px #F44336;
+}
+
+.sync-indicator.synced {
+  color: #4CAF50;
+}
+
+.sync-indicator.syncing {
+  color: #FFC107;
+}
+
+.sync-indicator.drifting {
+  color: #F44336;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+}
+
+.timer-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.timer-button, .sync-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.timer-button.start {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.timer-button.start:hover {
+  background-color: #45a049;
+}
+
+.timer-button.pause {
+  background-color: #ff9800;
+  color: white;
+}
+
+.timer-button.pause:hover {
+  background-color: #e68a00;
+}
+
+.sync-button {
+  background-color: #2196F3;
+  color: white;
+}
+
+.sync-button:hover {
+  background-color: #0b7dda;
+}
+
+.sync-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.timer-debug {
+  margin-top: 5px;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  color: #aaaaaa;
+}
