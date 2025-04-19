@@ -1,18 +1,8 @@
+import { getApiUrl, apiGet, apiPost } from '../../utils/apiUtils';
+
 /**
  * Service to handle all admin API requests
  */
-const getApiBaseUrl = () => {
-  // In production, use relative URLs
-  if (process.env.NODE_ENV === 'production') {
-    return '/api';
-  }
-  
-  // In development, use the configured backend URL
-  return `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api`;
-};
-
-const API_BASE_URL = getApiBaseUrl();
-
 class AdminApiService {
   /**
    * Get current game status
@@ -20,7 +10,7 @@ class AdminApiService {
   static async getGameStatus() {
     try {
       console.log('Fetching game status...');
-      const response = await fetch(`${API_BASE_URL}/admin/game-status`, {
+      const response = await fetch(getApiUrl('admin/game-status'), {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -43,40 +33,14 @@ class AdminApiService {
    * Login request
    */
   static async login(credentials) {
-    const response = await fetch(`${API_BASE_URL}/admin/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
-    }
-    
-    return response.json();
+    return apiPost('admin/login', credentials);
   }
   
   /**
    * Register new admin
    */
   static async register(credentials) {
-    const response = await fetch(`${API_BASE_URL}/admin/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
-    
-    if (!response.ok) {
-      try {
-        const error = await response.json();
-        throw new Error(error.error || `Registration failed with status: ${response.status}`);
-      } catch (parseError) {
-        throw new Error(`Registration failed with status: ${response.status}`);
-      }
-    }
-    
-    return response.json();
+    return apiPost('admin/register', credentials);
   }
   
   /**
@@ -84,17 +48,7 @@ class AdminApiService {
    */
   static async getPlayerStats() {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/player-stats`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        console.error(`Error fetching player stats: ${response.status}`);
-        return { total: 0, stationary: 0, moving: 0, matched: 0, available: 0 };
-      }
-      
-      return response.json();
+      return await apiGet('admin/player-stats');
     } catch (error) {
       console.error('Error fetching player stats:', error);
       return { total: 0, stationary: 0, moving: 0, matched: 0, available: 0 };
@@ -106,17 +60,7 @@ class AdminApiService {
    */
   static async getRatings() {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/ratings`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        console.error(`Error fetching ratings: ${response.status}`);
-        return [];
-      }
-      
-      return response.json();
+      return await apiGet('admin/ratings');
     } catch (error) {
       console.error('Error fetching ratings:', error);
       return [];
@@ -127,134 +71,80 @@ class AdminApiService {
    * Game control methods
    */
   static async startGame(round) {
-    const response = await fetch(`${API_BASE_URL}/admin/start-game`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ round }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
-      throw new Error(error.error || 'Failed to start game');
-    }
-    
-    return response.json();
+    return apiPost('admin/start-game', { round });
   }
   
   static async stopGame() {
-    const response = await fetch(`${API_BASE_URL}/admin/stop-game`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
-      throw new Error(error.error || 'Failed to stop game');
-    }
-    
-    return response.json();
+    return apiPost('admin/stop-game', {});
   }
   
   static async nextRound() {
-    const response = await fetch(`${API_BASE_URL}/admin/next-round`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
-      throw new Error(error.error || 'Failed to advance to next round');
-    }
-    
-    return response.json();
+    return apiPost('admin/next-round', {});
   }
   
   static async formTeams(round) {
-    const response = await fetch(`${API_BASE_URL}/form-teams`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ round }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to form teams');
-    }
-    
-    return response.json();
+    return apiPost('form-teams', { round });
   }
   
   static async resetRound() {
-    const response = await fetch(`${API_BASE_URL}/admin/reset-round`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
-      throw new Error(error.error || 'Failed to reset round');
-    }
-    
-    return response.json();
+    return apiPost('admin/reset-round', {});
   }
   
   /**
    * Data management methods
    */
   static async clearDatabase() {
-    const response = await fetch(`${API_BASE_URL}/admin/clear`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to clear database');
-    }
-    
-    return response.json();
+    return apiPost('admin/clear', {});
   }
   
   static async clearPlayers() {
-    const response = await fetch(`${API_BASE_URL}/admin/clear-players`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to clear player data');
-    }
-    
-    return response.json();
+    return apiPost('admin/clear-players', {});
   }
   
   static async clearMatches() {
-    const response = await fetch(`${API_BASE_URL}/admin/clear-matches`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to clear match data');
-    }
-    
-    return response.json();
+    return apiPost('admin/clear-matches', {});
   }
   
   static async clearRatings() {
-    const response = await fetch(`${API_BASE_URL}/admin/clear-ratings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to clear rating data');
+    return apiPost('admin/clear-ratings', {});
+  }
+
+  /**
+   * Player and match management methods
+   */
+  static async getPlayers() {
+    try {
+      return await apiGet('admin/players');
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      return [];
     }
-    
-    return response.json();
+  }
+
+  static async getMatches(round) {
+    try {
+      return await apiGet(`admin/matches?round=${round}`);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      return [];
+    }
+  }
+
+  static async endMatch(matchId) {
+    return apiPost(`admin/end-match/${matchId}`, {});
+  }
+
+  static async createMatch(player1Id, player2Id, round = 1) {
+    return apiPost('admin/create-match', { player1Id, player2Id, round });
+  }
+
+  static async getTeams(round) {
+    try {
+      return await apiGet(`teams/${round}`);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      throw error;
+    }
   }
 }
 

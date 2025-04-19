@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/TeamBattles.css';
+import { apiGet, apiPost } from '../utils/apiUtils';
 
 function TeamBattles() {
   const [teams, setTeams] = useState([]);
@@ -27,14 +28,8 @@ function TeamBattles() {
   const fetchTeams = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/teams/${round}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch teams');
-      }
-      
-      const data = await response.json();
+      // Use our apiGet utility function
+      const data = await apiGet(`teams/${round}`);
       setTeams(data.teams);
       
       // Generate battles if teams exist
@@ -110,16 +105,10 @@ function TeamBattles() {
     setSelectedBattle(null);
     
     // In a real implementation, you would send this to the backend
-    // to record the battle outcome
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-    fetch(`${backendUrl}/api/record-battle-winner`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        round: round,
-        battleId: battleId,
-        winningTeamId: winningTeamId
-      })
+    apiPost('record-battle-winner', {
+      round: round,
+      battleId: battleId,
+      winningTeamId: winningTeamId
     }).catch(err => console.error('Failed to record battle winner:', err));
   };
   

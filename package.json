@@ -12,7 +12,7 @@
     "server": "node server.js",
     "migrate": "node database/migrate.js",
     "copy-assets": "node src/utils/copyIcebreakers.js",
-    "render-build": "CI=false npm install && CI=false npm run build && mkdir -p public && cp -r build/* public/",
+    "render-build": "GENERATE_SOURCEMAP=false NODE_ENV=production npm install && npm run build && mkdir -p public && cp -r build/* public/",
     "render-start": "node server.js",
     "prepare-deployment": "npm install && npm run build && cp -r build/* public/"
   },

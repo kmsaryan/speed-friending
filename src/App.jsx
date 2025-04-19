@@ -5,10 +5,14 @@ import Admin from './pages/Admin';
 import Matching from './pages/Matching';
 import TeamBattle from './pages/TeamBattle';
 import TeamBattles from './pages/TeamBattles';
+import EnvDebug from './components/EnvDebug';
 
 function App() {
+  // In production, render the app normally
+  // In development, also include the EnvDebug component
   return (
     <Router>
+      {process.env.NODE_ENV !== 'production' && <EnvDebug />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<Admin />} />

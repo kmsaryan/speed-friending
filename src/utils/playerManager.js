@@ -1,4 +1,5 @@
 import socket from './socket';
+import { apiPost } from './apiUtils';
 
 class PlayerManager {
   constructor() {
@@ -22,17 +23,7 @@ class PlayerManager {
   // Register a player and assign a room
   async registerPlayer(playerData) {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(playerData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to register player');
-      }
-
-      const data = await response.json();
+      const data = await apiPost('register', playerData);
       this.playerId = data.playerId;
       this.roomId = `player_${this.playerId}`;
       localStorage.setItem('playerId', this.playerId);
@@ -58,18 +49,11 @@ class PlayerManager {
         }
       }
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/complete-round`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: this.playerId, round: this.currentRound }),
+      const data = await apiPost('complete-round', { 
+        playerId: this.playerId, 
+        round: this.currentRound 
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to complete round: ${errorData.error || 'Unknown error'}`);
-      }
-
-      const data = await response.json();
+      
       this.currentRound = data.nextRound;
       localStorage.setItem('currentRound', String(this.currentRound));
       console.log(`Player ${this.playerId} moved to round ${this.currentRound}`);

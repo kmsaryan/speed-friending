@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getApiUrl } from '../../utils/apiUtils';
 import '../styles/LiveMatchTable.css';
 import socket from '../../utils/socket';
 
@@ -53,8 +54,7 @@ function LiveMatchTable() {
   
   const fetchPlayers = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/players`);
+      const response = await fetch(getApiUrl('admin/players'));
       
       if (!response.ok) {
         console.error(`Error response fetching players: ${response.status} ${response.statusText}`);
@@ -73,8 +73,7 @@ function LiveMatchTable() {
   
   const fetchMatches = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/matches?round=${currentRound}`);
+      const response = await fetch(getApiUrl(`admin/matches?round=${currentRound}`));
       
       if (!response.ok) {
         console.error(`Error response fetching matches: ${response.status} ${response.statusText}`);
@@ -114,8 +113,7 @@ function LiveMatchTable() {
     }
     
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/end-match/${matchId}`, {
+      const response = await fetch(getApiUrl(`admin/end-match/${matchId}`), {
         method: 'POST',
       });
       
@@ -133,8 +131,7 @@ function LiveMatchTable() {
   // Handle manual player matching
   const handleCreateMatch = async (player1Id, player2Id) => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/create-match`, {
+      const response = await fetch(getApiUrl('admin/create-match'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player1Id, player2Id, round: currentRound }),

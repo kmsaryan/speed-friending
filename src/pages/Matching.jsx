@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Add useNavigate import
+import { useParams, useNavigate } from "react-router-dom";
 import socket from "../utils/socket";
-import "../styles/global.css"; // Replace colors.css import with global.css
+import { apiGet, apiPost } from "../utils/apiUtils";
+import "../styles/global.css";
 import "../styles/Matching.css";
 import StationaryParticipant from "../components/StationaryParticipant";
 import MovingParticipant from "../components/MovingParticipant";
@@ -20,10 +21,10 @@ function Matching() {
     depth: 3,
     wouldChatAgain: true
   });
-  const [matchId, setMatchId] = useState(null); // Add match ID state
-  const navigate = useNavigate(); // Add this hook for navigation
+  const [matchId, setMatchId] = useState(null);
+  const navigate = useNavigate();
   const [currentPlayerName, setCurrentPlayerName] = useState("You");
-  const [notification, setNotification] = useState(null); // Add notification state
+  const [notification, setNotification] = useState(null);
   
   // Store player ID locally
   const [playerId, setPlayerId] = useState(() => {
@@ -66,20 +67,12 @@ function Matching() {
         const fetchPlayerName = async () => {
           try {
             console.log("Fetching player name from API for ID:", playerId);
-            const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-            const response = await fetch(`${backendUrl}/api/player/${playerId}`);
+            const data = await apiGet(`player/${playerId}`);
             
-            if (response.ok) {
-              const data = await response.json();
-              console.log("Received player data:", data);
-              
-              if (data.name) {
-                setCurrentPlayerName(data.name);
-                localStorage.setItem('playerName', data.name);
-                console.log("Updated player name to:", data.name);
-              }
-            } else {
-              console.error("Failed to fetch player data:", response.status);
+            if (data.name) {
+              setCurrentPlayerName(data.name);
+              localStorage.setItem('playerName', data.name);
+              console.log("Updated player name to:", data.name);
             }
           } catch (error) {
             console.error("Error fetching player name:", error);
@@ -103,17 +96,8 @@ function Matching() {
       if (matchData.matchId) {
         setMatchId(matchData.matchId);
       } else if (matchData.id) {
-        // This is a fallback - find the match ID from the socket server response
-        db.get(
-          'SELECT id FROM matches WHERE (player_id = ? AND matched_player_id = ?) OR (player_id = ? AND matched_player_id = ?)',
-          [playerId, matchData.id, matchData.id, playerId],
-          (err, match) => {
-            if (!err && match) {
-              setMatchId(match.id);
-              console.log("Found match ID from database:", match.id);
-            }
-          }
-        );
+        console.log("Received match player ID but no match ID - using the ID field");
+        setMatchId(matchData.id);
       }
       
       setMessage("Match found!");
@@ -395,34 +379,30 @@ function Matching() {
       
       console.log("Submitting rating with player ID:", actualPlayerId);
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: actualPlayerId,
-          ratedPlayerId: match.id,
-          enjoyment: ratings.enjoyment,
-          depth: ratings.depth,
-          wouldChatAgain: ratings.wouldChatAgain,
-          round: match.round || 1
-        })
+      // Use our apiPost utility instead of direct fetch
+      await apiPost('rate', {
+        playerId: actualPlayerId,
+        ratedPlayerId: match.id,
+        enjoyment: ratings.enjoyment,
+        depth: ratings.depth,
+        wouldChatAgain: ratings.wouldChatAgain,
+        round: match.round || 1
       });
       
-      if (response.ok) {
-        setMessage("Rating submitted! Looking for your next match...");
-        setShowRating(false);
-        
-        // Emit event to update server about the rating submission
-        socket.emit("submit_rating", {
-          playerId: actualPlayerId,
-          ratedPlayerId: match.id,
-          round: match.round || 1
-        });
-        
-        retryMatch();
-      }
+      setMessage("Rating submitted! Looking for your next match...");
+      setShowRating(false);
+      
+      // Emit event to update server about the rating submission
+      socket.emit("submit_rating", {
+        playerId: actualPlayerId,
+        ratedPlayerId: match.id,
+        round: match.round || 1
+      });
+      
+      retryMatch();
     } catch (error) {
       console.error("Error submitting rating:", error);
+      setMessage("Failed to submit rating. Please try again.");
     }
   };
 

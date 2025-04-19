@@ -6,6 +6,7 @@ import '../styles/global.css'; // Replace colors.css import with global.css
 import '../styles/PlayerRegistration.css';
 import socket from '../utils/socket';
 import registerIcon from '../asserts/register.svg';
+import { apiGet, apiPost } from '../utils/apiUtils';
 
 function PlayerRegistration() {
   const [formData, setFormData] = useState({
@@ -23,17 +24,8 @@ function PlayerRegistration() {
     setFormData({ ...formData, [name]: value });
 
     if (name === 'playerType') {
-      // Use relative URL instead of environment variable
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? `/api/player-count?playerType=${value}`
-        : `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/player-count?playerType=${value}`;
-      
       try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await apiGet(`player-count?playerType=${value}`);
         if (data.count > 5) { // Example threshold
           setWarning(`There are already many ${value} players. Consider selecting a different type.`);
         } else {
@@ -56,43 +48,26 @@ function PlayerRegistration() {
       return;
     }
 
-    // Use relative URL instead of environment variable
-    const apiUrl = process.env.NODE_ENV === 'production'
-      ? '/api/register'
-      : `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/register`;
-
     try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      const data = await apiPost('register', formData);
+      console.log('Registration successful, player ID:', data.id);
+      
+      // Store player ID and NAME in localStorage for persistence
+      localStorage.setItem('playerId', data.id);
+      localStorage.setItem('playerName', formData.name.trim());
+      localStorage.setItem('playerType', formData.playerType);
+      
+      console.log(`Stored player name "${formData.name}" in localStorage`);
+      
+      // Register the player with the Socket.IO server
+      socket.emit('register_player', {
+        playerId: data.id,
+        playerName: formData.name,
+        playerType: formData.playerType
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Registration successful, player ID:', data.id);
-        
-        // Store player ID and NAME in localStorage for persistence
-        localStorage.setItem('playerId', data.id);
-        localStorage.setItem('playerName', formData.name.trim());
-        localStorage.setItem('playerType', formData.playerType);
-        
-        console.log(`Stored player name "${formData.name}" in localStorage`);
-        
-        // Register the player with the Socket.IO server
-        socket.emit('register_player', {
-          playerId: data.id,
-          playerName: formData.name,
-          playerType: formData.playerType
-        });
-        
-        console.log('Registration successful, redirecting to matching page.');
-        navigate(`/matching/${formData.playerType}`);
-      } else {
-        const errorData = await response.json();
-        console.error('Registration failed:', errorData);
-        alert(errorData.error || 'Registration failed. Please try again.');
-      }
+      
+      console.log('Registration successful, redirecting to matching page.');
+      navigate(`/matching/${formData.playerType}`);
     } catch (error) {
       console.error('Error during registration:', error);
       alert('An error occurred during registration. Please try again.');
