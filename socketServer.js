@@ -69,6 +69,8 @@ const initializeSocketServer = (server) => {
   const socketToPlayer = new Map();
   // Track players currently in matching process to avoid duplicate matches
   const matchingInProgress = new Set();
+  // Add a map to store timer states for matches
+  const matchTimers = new Map();
 
   io.on("connection", (socket) => {
     console.log(`[SOCKET LOG]: Player connected with ID: ${socket.id}`);
@@ -154,167 +156,162 @@ const initializeSocketServer = (server) => {
             console.log(`Socket: ${sid}, Player ID: ${data.playerId}, Type: ${data.playerType}`);
           }
           
-          // Step 1: Check if player is already matched in current round
+          // Step 1: Get the current player's details
           db.get(
-            `SELECT * FROM matches 
-             WHERE (player_id = ? OR matched_player_id = ?) 
-             AND round = ?`,
-            [playerId, playerId, currentRound],
-            (err, existingMatch) => {
-              if (err) {
-                console.error(`[SOCKET LOG]: Error checking existing matches: ${err.message}`);
-                socket.emit("no_match", "Error checking existing matches");
+            `SELECT * FROM players WHERE id = ?`,
+            [playerId],
+            (err, currentPlayer) => {
+              if (err || !currentPlayer) {
+                console.error(`[SOCKET LOG]: Error retrieving current player ${playerId}:`, err);
+                socket.emit("no_match", "Error retrieving your player data");
                 matchingInProgress.delete(playerId);
                 return;
               }
-              
-              if (existingMatch) {
-                console.log(`[SOCKET LOG]: Player ${playerId} is already matched in round ${currentRound}`);
-                socket.emit("no_match", "You are already matched in this round.");
-                matchingInProgress.delete(playerId);
-                return;
-              }
-              
-              // Step 2: Get the current player's details
-              db.get(
-                `SELECT * FROM players WHERE id = ?`,
-                [playerId],
-                (err, currentPlayer) => {
-                  if (err || !currentPlayer) {
-                    console.error(`[SOCKET LOG]: Error retrieving current player ${playerId}:`, err);
-                    socket.emit("no_match", "Error retrieving your player data");
-                    matchingInProgress.delete(playerId);
-                    return;
-                  }
 
-                  // Step 3: Check if current player is available
-                  if (statusColumnExists && currentPlayer.status !== 'available') {
-                    console.log(`[SOCKET LOG]: Player ${playerId} is not available (status: ${currentPlayer.status})`);
-                    socket.emit("no_match", "You are not available for matching right now.");
+              // Step 2: Check if current player is available
+              if (statusColumnExists && currentPlayer.status !== 'available') {
+                console.log(`[SOCKET LOG]: Player ${playerId} is not available (status: ${currentPlayer.status})`);
+                socket.emit("no_match", "You are not available for matching right now.");
+                matchingInProgress.delete(playerId);
+                return;
+              }
+              
+              // Step 3: Find a match with the opposite type and available status
+              // But don't match with players this player has already matched with in this round
+              const query = statusColumnExists 
+                ? `SELECT * FROM players 
+                   WHERE playerType = ? 
+                   AND id != ? 
+                   AND id NOT IN (
+                     SELECT matched_player_id FROM matches 
+                     WHERE player_id = ? AND round = ?
+                     UNION
+                     SELECT player_id FROM matches 
+                     WHERE matched_player_id = ? AND round = ?
+                   ) 
+                   AND status = 'available' 
+                   ORDER BY RANDOM() LIMIT 1`
+                : `SELECT * FROM players 
+                   WHERE playerType = ? 
+                   AND id != ? 
+                   AND id NOT IN (
+                     SELECT matched_player_id FROM matches 
+                     WHERE player_id = ? AND round = ?
+                     UNION
+                     SELECT player_id FROM matches 
+                     WHERE matched_player_id = ? AND round = ?
+                   ) 
+                   ORDER BY RANDOM() LIMIT 1`;
+              
+              db.get(
+                query,
+                [oppositeType, playerId, playerId, currentRound, playerId, currentRound],
+                (err, match) => {
+                  if (err) {
+                    console.error("[SOCKET LOG]: Database error:", err.message);
+                    socket.emit("no_match", "Error finding match");
                     matchingInProgress.delete(playerId);
                     return;
                   }
                   
-                  // Step 4: Find a match with the opposite type and available status
-                  const query = statusColumnExists 
-                    ? `SELECT * FROM players 
-                       WHERE playerType = ? 
-                       AND id != ? 
-                       AND id NOT IN (
-                         SELECT player_id FROM matches WHERE round = ?
-                         UNION
-                         SELECT matched_player_id FROM matches WHERE round = ?
-                       ) 
-                       AND status = 'available' 
-                       ORDER BY RANDOM() LIMIT 1`
-                    : `SELECT * FROM players 
-                       WHERE playerType = ? 
-                       AND id != ? 
-                       AND id NOT IN (
-                         SELECT player_id FROM matches WHERE round = ?
-                         UNION
-                         SELECT matched_player_id FROM matches WHERE round = ?
-                       ) 
-                       ORDER BY RANDOM() LIMIT 1`;
-                  
-                  db.get(
-                    query,
-                    [oppositeType, playerId, currentRound, currentRound],
-                    (err, match) => {
-                      if (err) {
-                        console.error("[SOCKET LOG]: Database error:", err.message);
-                        socket.emit("no_match", "Error finding match");
-                        matchingInProgress.delete(playerId);
-                        return;
-                      }
+                  if (match) {
+                    console.log(`[SOCKET LOG]: Match found for ${socket.id}:`, match);
+                    
+                    // Update statuses only if the column exists
+                    if (statusColumnExists) {
+                      db.run('UPDATE players SET status = ? WHERE id = ?', ['matched', match.id], (err) => {
+                        if (err) console.error(`[SOCKET LOG]: Error updating match status: ${err.message}`);
+                        else console.log(`[SOCKET LOG]: Updated player ${match.id} status to matched`);
+                      });
                       
-                      if (match) {
-                        console.log(`[SOCKET LOG]: Match found for ${socket.id}:`, match);
-                        
-                        // Update statuses only if the column exists
-                        if (statusColumnExists) {
-                          db.run('UPDATE players SET status = ? WHERE id = ?', ['matched', match.id], (err) => {
-                            if (err) console.error(`[SOCKET LOG]: Error updating match status: ${err.message}`);
-                            else console.log(`[SOCKET LOG]: Updated player ${match.id} status to matched`);
-                          });
-                          
-                          db.run('UPDATE players SET status = ? WHERE id = ?', ['matched', playerId], (err) => {
-                            if (err) console.error(`[SOCKET LOG]: Error updating player status: ${err.message}`);
-                            else console.log(`[SOCKET LOG]: Updated player ${playerId} status to matched`);
-                          });
-                        }
-                        
-                        // Record the match with the current round
-                        db.run(
-                          'INSERT INTO matches (player_id, matched_player_id, round) VALUES (?, ?, ?)',
-                          [playerId, match.id, currentRound],
-                          function(err) {
-                            if (err) {
-                              console.error(`[SOCKET LOG]: Error inserting match: ${err.message}`);
-                            } else {
-                              console.log(`[SOCKET LOG]: Match recorded with ID: ${this.lastID}`);
-                              
-                              // Broadcast match created event to admin panels
-                              if (global.io) {
-                                global.io.emit('match_created', { 
-                                  matchId: this.lastID,
-                                  player1Id: playerId, 
-                                  player2Id: match.id
-                                });
-                              }
-                            }
-                            
-                            // Remove player from matching in progress
-                            matchingInProgress.delete(playerId);
-                          }
-                        );
-                        
-                        // Send complete match details to the current player
-                        socket.emit("match_found", {
-                          id: match.id,
-                          name: match.name,
-                          gender: match.gender,
-                          interests: match.interests,
-                          preferences: match.preferences,
-                          playerType: match.playerType,
-                          tableNumber: match.tableNumber,
-                          round: currentRound
-                        });
-                        
-                        // Find the socket for the matched player
-                        let matchedSocket = null;
-                        for (const [socketId, data] of socketToPlayer.entries()) {
-                          if (data.playerId === match.id) {
-                            matchedSocket = socketId;
-                            break;
-                          }
-                        }
-                        
-                        // If we found the socket, notify the matched player
-                        if (matchedSocket) {
-                          io.to(matchedSocket).emit("match_found", {
-                            id: currentPlayer.id,
-                            name: currentPlayer.name,
-                            gender: currentPlayer.gender,
-                            interests: currentPlayer.interests,
-                            preferences: currentPlayer.preferences, 
-                            playerType: currentPlayer.playerType,
-                            tableNumber: currentPlayer.tableNumber,
-                            round: currentRound
-                          });
-                          
-                          console.log(`[SOCKET LOG]: Notified matched player at socket ${matchedSocket}`);
-                        } else {
-                          console.log(`[SOCKET LOG]: Matched player (ID: ${match.id}) not connected via socket`);
-                        }
-                      } else {
-                        console.log(`[SOCKET LOG]: No match found for ${socket.id}`);
-                        socket.emit("no_match", "No match found. Waiting for more players.");
-                        // Remove player from matching in progress
-                        matchingInProgress.delete(playerId);
-                      }
+                      db.run('UPDATE players SET status = ? WHERE id = ?', ['matched', playerId], (err) => {
+                        if (err) console.error(`[SOCKET LOG]: Error updating player status: ${err.message}`);
+                        else console.log(`[SOCKET LOG]: Updated player ${playerId} status to matched`);
+                      });
                     }
-                  );
+                    
+                    // Record the match with the current round
+                    db.run(
+                      'INSERT INTO matches (player_id, matched_player_id, round) VALUES (?, ?, ?)',
+                      [playerId, match.id, currentRound],
+                      function(err) {
+                        if (err) {
+                          console.error(`[SOCKET LOG]: Error inserting match: ${err.message}`);
+                        } else {
+                          const matchId = this.lastID; // Store matchId in a local variable
+                          console.log(`[SOCKET LOG]: Match recorded with ID: ${matchId}`);
+                          
+                          // Create a unique room for this match
+                          const matchRoom = `match_${matchId}`;
+                          
+                          // Find the socket for the matched player
+                          let matchedSocket = null;
+                          for (const [socketId, data] of socketToPlayer.entries()) {
+                            if (data.playerId === match.id) {
+                              matchedSocket = socketId;
+                              break;
+                            }
+                          }
+                          
+                          // Join both players to the match room
+                          socket.join(matchRoom);
+                          if (matchedSocket) {
+                            io.sockets.sockets.get(matchedSocket)?.join(matchRoom);
+                            console.log(`[SOCKET LOG]: Both players joined room ${matchRoom}`);
+                          }
+                          
+                          // Broadcast match created event to admin panels
+                          if (global.io) {
+                            global.io.emit('match_created', { 
+                              matchId: matchId,
+                              player1Id: playerId, 
+                              player2Id: match.id
+                            });
+                          }
+                          
+                          // Send complete match details to the current player
+                          socket.emit("match_found", {
+                            id: match.id,
+                            name: match.name,
+                            gender: match.gender,
+                            interests: match.interests,
+                            preferences: match.preferences,
+                            playerType: match.playerType,
+                            tableNumber: match.tableNumber,
+                            round: currentRound,
+                            matchId: matchId // Use the local variable here
+                          });
+                          
+                          // Find the socket for the matched player
+                          if (matchedSocket) {
+                            io.to(matchedSocket).emit("match_found", {
+                              id: currentPlayer.id,
+                              name: currentPlayer.name,
+                              gender: currentPlayer.gender,
+                              interests: currentPlayer.interests,
+                              preferences: currentPlayer.preferences, 
+                              playerType: currentPlayer.playerType,
+                              tableNumber: currentPlayer.tableNumber,
+                              round: currentRound,
+                              matchId: matchId // Also send matchId to the matched player
+                            });
+                            
+                            console.log(`[SOCKET LOG]: Notified matched player at socket ${matchedSocket} with matchId ${matchId}`);
+                          } else {
+                            console.log(`[SOCKET LOG]: Matched player (ID: ${match.id}) not connected via socket`);
+                          }
+                          
+                          // Remove player from matching in progress
+                          matchingInProgress.delete(playerId);
+                        }
+                      }
+                    );
+                  } else {
+                    console.log(`[SOCKET LOG]: No match found for ${socket.id}`);
+                    socket.emit("no_match", "No match found. Waiting for more players.");
+                    // Remove player from matching in progress
+                    matchingInProgress.delete(playerId);
+                  }
                 }
               );
             }
@@ -330,6 +327,7 @@ const initializeSocketServer = (server) => {
       // Get the player ID directly from the rating data
       const playerId = ratingData.playerId;
       const ratedPlayerId = ratingData.ratedPlayerId;
+      const round = ratingData.round || 1;
       
       if (!playerId) {
         console.log(`[SOCKET LOG]: No player ID provided in rating data`);
@@ -353,6 +351,35 @@ const initializeSocketServer = (server) => {
             if (global.io) {
               global.io.emit("player_status_updated");
             }
+            
+            // Mark the match as rated in the database
+            db.all("PRAGMA table_info(matches)", (err, columns) => {
+              if (err) {
+                console.error(`[SOCKET LOG]: Error checking matches table columns: ${err.message}`);
+                return;
+              }
+              
+              const hasRatedColumn = columns.some(col => col.name === 'rated');
+              
+              if (hasRatedColumn) {
+                db.run(
+                  `UPDATE matches SET rated = 1 
+                   WHERE (player_id = ? AND matched_player_id = ?) 
+                   OR (player_id = ? AND matched_player_id = ?) 
+                   AND round = ?`,
+                  [playerId, ratedPlayerId, ratedPlayerId, playerId, round],
+                  function(err) {
+                    if (err) {
+                      console.error(`[SOCKET LOG]: Error updating match rated status: ${err.message}`);
+                    } else {
+                      console.log(`[SOCKET LOG]: Match marked as rated between players ${playerId} and ${ratedPlayerId}`);
+                    }
+                  }
+                );
+              } else {
+                console.log(`[SOCKET LOG]: 'rated' column does not exist in matches table. Skipping status update.`);
+              }
+            });
           }
         });
       }
@@ -382,41 +409,155 @@ const initializeSocketServer = (server) => {
 
     // Handle timer controls
     socket.on("timer_control", (data) => {
-      const { matchId, action, timeLeft } = data;
-      console.log(`[SOCKET LOG]: Timer control from ${socket.id}. Action: ${action}, Match: ${matchId}`);
-      
-      // First get both players involved in this match
-      db.get(
-        'SELECT player_id, matched_player_id FROM matches WHERE id = ?',
-        [matchId],
-        (err, match) => {
-          if (err || !match) {
-            console.error(`[SOCKET LOG]: Error getting match for timer: ${err?.message || 'Match not found'}`);
-            return;
-          }
-          
-          // Find sockets for both players
-          let player1Socket = null;
-          let player2Socket = null;
-          
-          for (const [socketId, data] of socketToPlayer.entries()) {
-            if (data.playerId === match.player_id) {
-              player1Socket = socketId;
-            }
-            if (data.playerId === match.matched_player_id) {
-              player2Socket = socketId;
-            }
-          }
-          
-          // Broadcast the timer action to the other player
-          if (player1Socket && player1Socket !== socket.id) {
-            io.to(player1Socket).emit("timer_update", { action, timeLeft });
-          }
-          if (player2Socket && player2Socket !== socket.id) {
-            io.to(player2Socket).emit("timer_update", { action, timeLeft });
+      const { matchId, action, timeLeft, senderId } = data;
+
+      if (!matchId) {
+        console.error(`[SOCKET LOG]: Timer control failed. matchId is null.`);
+        return;
+      }
+
+      const matchRoom = `match_${matchId}`;
+      console.log(`[SOCKET LOG]: Timer control for room ${matchRoom}. Action: ${action}, Time Left: ${timeLeft}`);
+
+      // Check if the room exists
+      const room = io.sockets.adapter.rooms.get(matchRoom);
+      if (!room || room.size === 0) {
+        console.error(`[SOCKET LOG]: Room ${matchRoom} does not exist or is empty.`);
+        
+        // Try to recover by broadcasting to all sockets with this player's match ID
+        let foundMatch = false;
+        for (const [socketId, socketData] of socketToPlayer.entries()) {
+          if (socketData.currentMatchId && socketData.currentMatchId == matchId) {
+            io.to(socketId).emit("timer_update", { 
+              action, 
+              timeLeft,
+              matchId,
+              senderId 
+            });
+            foundMatch = true;
+            console.log(`[SOCKET LOG]: Directly emitted timer update to socket ${socketId}`);
           }
         }
-      );
+        
+        if (!foundMatch) {
+          console.error(`[SOCKET LOG]: Could not find any sockets for match ${matchId}`);
+        }
+        
+        return;
+      }
+
+      // Store timer state for late joiners
+      if (action === 'start' || action === 'sync') {
+        matchTimers.set(matchId, {
+          timeLeft,
+          isActive: action === 'start',
+          lastUpdated: Date.now()
+        });
+      }
+
+      // Broadcast timer updates to the room including the original sender ID
+      io.to(matchRoom).emit("timer_update", { 
+        action, 
+        timeLeft,
+        matchId,
+        senderId
+      });
+      
+      console.log(`[SOCKET LOG]: Broadcasted timer update to room ${matchRoom} with ${room.size} clients`);
+    });
+
+    // Handle requests for timer sync
+    socket.on("request_timer_sync", (data) => {
+      const { matchId } = data;
+      
+      if (!matchId) return;
+      
+      const timerState = matchTimers.get(matchId);
+      if (timerState) {
+        // Calculate time elapsed since last update
+        const elapsed = (Date.now() - timerState.lastUpdated) / 1000;
+        let currentTime = timerState.timeLeft;
+        
+        // If timer is active, subtract elapsed time
+        if (timerState.isActive) {
+          currentTime = Math.max(0, currentTime - Math.floor(elapsed));
+        }
+        
+        socket.emit("timer_update", {
+          action: timerState.isActive ? 'start' : 'sync',
+          timeLeft: currentTime,
+          matchId,
+          senderId: 'server'
+        });
+        
+        console.log(`[SOCKET LOG]: Sent timer sync to socket ${socket.id} for match ${matchId}`);
+      }
+    });
+
+    // Handle heartbeats to keep connection alive
+    socket.on("heartbeat", (data) => {
+      // Simply acknowledge receipt - this keeps the connection alive
+      socket.emit("heartbeat_ack", { received: true, serverTime: Date.now() });
+    });
+
+    // Handle room joining
+    socket.on("join_room", (data) => {
+      const { roomId } = data;
+      if (!roomId) return;
+      
+      console.log(`[SOCKET LOG]: Socket ${socket.id} joining room: ${roomId}`);
+      socket.join(roomId);
+      
+      // If this is a match room, send current timer state
+      if (roomId.startsWith('match_')) {
+        const matchId = roomId.replace('match_', '');
+        
+        // Get players in this room
+        const room = io.sockets.adapter.rooms.get(roomId);
+        if (room) {
+          console.log(`[SOCKET LOG]: Room ${roomId} has ${room.size} members`);
+        }
+      }
+    });
+
+    // Handle room leaving
+    socket.on("leave_room", (data) => {
+      const { roomId } = data;
+      if (!roomId) return;
+      
+      console.log(`[SOCKET LOG]: Socket ${socket.id} leaving room: ${roomId}`);
+      socket.leave(roomId);
+    });
+
+    // Handle match ending
+    socket.on("end_match", (data) => {
+      const { matchId, playerId } = data;
+
+      if (!matchId || !playerId) {
+        console.error(`[SOCKET LOG]: Cannot end match. matchId or playerId is null.`);
+        return;
+      }
+
+      console.log(`[SOCKET LOG]: Ending match with ID: ${matchId} for player: ${playerId}`);
+
+      // Update the player's status to "available"
+      db.run('UPDATE players SET status = ? WHERE id = ?', ['available', playerId], (err) => {
+        if (err) {
+          console.error(`[SOCKET LOG]: Error updating player status to available: ${err.message}`);
+        } else {
+          console.log(`[SOCKET LOG]: Player ${playerId} status updated to available.`);
+          io.emit("player_status_updated"); // Notify all clients
+        }
+      });
+
+      // Remove the match from the live match table
+      db.run('DELETE FROM matches WHERE id = ?', [matchId], (err) => {
+        if (err) {
+          console.error(`[SOCKET LOG]: Error deleting match with ID ${matchId}: ${err.message}`);
+        } else {
+          console.log(`[SOCKET LOG]: Match with ID ${matchId} ended and removed.`);
+        }
+      });
     });
 
     // Handle disconnection
@@ -427,6 +568,10 @@ const initializeSocketServer = (server) => {
       const socketData = socketToPlayer.get(socket.id);
       if (socketData) {
         const { playerId } = socketData;
+        
+        // Get all rooms this socket was in
+        const rooms = socket.rooms;
+        console.log(`[SOCKET LOG]: Player was in rooms:`, rooms);
         
         // Remove player from matching in progress
         matchingInProgress.delete(playerId);

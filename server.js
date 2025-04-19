@@ -44,6 +44,7 @@ const teamsRoutes = require('./routes/teams');
 const battlesRoutes = require('./routes/battles'); 
 const playerCountRoutes = require('./routes/playerCount');
 const adminRoutes = require('./routes/admin');
+const roundRoutes = require('./routes/round'); // Add this line
 
 // Print available routes in admin (for debugging)
 console.log('Available admin routes:');
@@ -61,6 +62,7 @@ app.use('/api', teamsRoutes);
 app.use('/api', battlesRoutes); 
 app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes);
+app.use('/api', roundRoutes); // Add this line
 
 // Add new routes for enhanced admin functionality
 app.get('/api/admin/players', (req, res) => {

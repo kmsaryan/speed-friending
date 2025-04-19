@@ -2,10 +2,10 @@
 // File: src/components/StationaryParticipant.jsx
 // This file defines the StationaryParticipant component, which displays the details of a stationary participant after they have been matched.
 import React from 'react';
-import '../styles/global.css'; // Replace colors.css import with global.css
+import '../styles/global.css'; 
 import '../styles/Participant.css';
 import deskIcon from '../asserts/Stationary.svg';
-import timerIcon from '../asserts/timer.svg'; // Add timer icon import
+import timerIcon from '../asserts/timer.svg';
 
 function StationaryParticipant({ match, timeLeft, timerActive, toggleTimer }) {
   return (
@@ -30,24 +30,37 @@ function StationaryParticipant({ match, timeLeft, timerActive, toggleTimer }) {
           </div>
         </div>
 
-        <div className="timer-controls-container">
+        <div className="timer-status-container">
           <div className="timer-icon-container">
             <img src={timerIcon} alt="Timer" className="timer-icon" />
           </div>
           <p className="timer-instruction">
-            As the stationary player, you control the conversation timer.
+            Either player can start or pause the timer for this conversation.
           </p>
-          <button 
-            onClick={toggleTimer} 
-            className={timerActive ? "btn-warning btn-rounded timer-button" : "btn-success btn-rounded timer-button"}
-          >
-            {timerActive ? "Pause Timer" : "Start Interaction"}
-          </button>
+          <div className="timer-controls">
+            <button
+              onClick={toggleTimer}
+              className={timerActive ? "btn-warning btn-rounded" : "btn-success btn-rounded"}
+            >
+              {timerActive ? "Pause Timer" : "Start Interaction"}
+            </button>
+          </div>
+          {timerActive && (
+            <div className="timer-countdown">
+              {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
+            </div>
+          )}
+          <div className="timer-status">
+            Timer Status: <span className={timerActive ? "status-active" : "status-inactive"}>
+              {timerActive ? "Active" : "Inactive"}
+            </span>
+          </div>
         </div>
 
         <div className="instruction">
           <p>Your match will come to your table. Please stay at your position.</p>
           <p>After your conversation, you'll be asked to rate your interaction.</p>
+          <p><strong>Once the timer ends, click "End Match" to make yourself available for the next match.</strong></p>
         </div>
       </div>
     </div>

@@ -145,15 +145,62 @@ function checkRatingsTable(db, resolve, reject) {
             }
             
             console.log('Round column added successfully to ratings table.');
-            resolve();
+            checkMatchesTable(db, resolve, reject);
           });
         } else {
           console.log('Round column already exists in ratings table.');
-          resolve();
+          checkMatchesTable(db, resolve, reject);
         }
       });
     } else {
       console.log('Ratings table does not exist yet. It will be created with the schema.');
+      checkMatchesTable(db, resolve, reject);
+    }
+  });
+}
+
+// New function to check and fix matches table
+function checkMatchesTable(db, resolve, reject) {
+  console.log('Checking matches table...');
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'", (err, table) => {
+    if (err) {
+      console.error('Error checking for matches table:', err.message);
+      reject(err);
+      return;
+    }
+    
+    if (table) {
+      // Check if rated column exists
+      db.all("PRAGMA table_info(matches)", (err, columns) => {
+        if (err) {
+          console.error('Error checking matches columns:', err.message);
+          reject(err);
+          return;
+        }
+        
+        const hasRatedColumn = columns.some(col => col.name === 'rated');
+        
+        if (!hasRatedColumn) {
+          console.log('Rated column missing, adding it to matches table...');
+          
+          // Add rated column to existing matches table
+          db.run('ALTER TABLE matches ADD COLUMN rated INTEGER DEFAULT 0', (err) => {
+            if (err) {
+              console.error('Error adding rated column to matches table:', err.message);
+              reject(err);
+              return;
+            }
+            
+            console.log('Rated column added successfully to matches table.');
+            resolve();
+          });
+        } else {
+          console.log('Rated column already exists in matches table.');
+          resolve();
+        }
+      });
+    } else {
+      console.log('Matches table does not exist yet. It will be created with the schema.');
       resolve();
     }
   });

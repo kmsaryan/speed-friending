@@ -79,6 +79,10 @@ router.post('/rate', (req, res) => {
               if (global.io) {
                 global.io.emit('player_status_updated');
                 console.log('[RATING]: Broadcasted player_status_updated event');
+                
+                // Also notify any waiting players that new matches might be available
+                global.io.emit('new_players_available');
+                console.log('[RATING]: Broadcasted new_players_available event');
               }
               
               // Also update the matching record to mark it as rated
