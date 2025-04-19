@@ -2,18 +2,14 @@ import { io } from "socket.io-client";
 
 // Dynamically determine the WebSocket server URL
 const getWebSocketURL = () => {
-  // In production, use the same hostname but with the WebSocket protocol
+  // In production, use the same hostname
   if (process.env.NODE_ENV === 'production') {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Use the same host (this handles deployed scenarios automatically)
-    return `${protocol}//${window.location.host}`;
+    // This ensures we're using the same host, which avoids CORS issues
+    return window.location.origin;
   }
   
-  // Otherwise use the configured backend URL
-  if (process.env.REACT_APP_BACKEND_URL) {
-    return process.env.REACT_APP_BACKEND_URL.replace(/^http/, "ws");
-  }
-  return "ws://localhost:5000"; // Default for local development
+  // In development, use the configured backend URL
+  return process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 };
 
 const serverUrl = getWebSocketURL();

@@ -23,9 +23,13 @@ function PlayerRegistration() {
     setFormData({ ...formData, [name]: value });
 
     if (name === 'playerType') {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      // Use relative URL instead of environment variable
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? `/api/player-count?playerType=${value}`
+        : `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/player-count?playerType=${value}`;
+      
       try {
-        const response = await fetch(`${backendUrl}/api/player-count?playerType=${value}`);
+        const response = await fetch(apiUrl);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -52,10 +56,13 @@ function PlayerRegistration() {
       return;
     }
 
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    // Use relative URL instead of environment variable
+    const apiUrl = process.env.NODE_ENV === 'production'
+      ? '/api/register'
+      : `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/register`;
 
     try {
-      const response = await fetch(`${backendUrl}/api/register`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

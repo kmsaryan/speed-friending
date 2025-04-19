@@ -98,26 +98,5 @@
     </div>
   </div>
   
-  <script>
-    // Add basic error handling for script loading failures
-    window.addEventListener('error', function(e) {
-      if (e.target.tagName === 'SCRIPT') {
-        document.querySelector('.error-container').style.display = 'block';
-        document.querySelector('#debug-output').textContent = 
-          'Failed to load: ' + e.target.src + '\nError: ' + e.message;
-      }
-    });
-    
-    // Show error container if React doesn't load after 5 seconds
-    setTimeout(function() {
-      if (!window.ReactLoaded) {
-        document.querySelector('.error-container').style.display = 'block';
-        document.querySelector('#debug-output').textContent = 
-          'Timeout waiting for React to initialize.\n' +
-          'URL: ' + window.location.href + '\n' +
-          'User Agent: ' + navigator.userAgent;
-      }
-    }, 5000);
-  </script>
 </body>
 </html>

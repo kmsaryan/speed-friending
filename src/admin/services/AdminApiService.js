@@ -1,7 +1,17 @@
 /**
  * Service to handle all admin API requests
  */
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const getApiBaseUrl = () => {
+  // In production, use relative URLs
+  if (process.env.NODE_ENV === 'production') {
+    return '/api';
+  }
+  
+  // In development, use the configured backend URL
+  return `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class AdminApiService {
   /**
@@ -10,7 +20,7 @@ class AdminApiService {
   static async getGameStatus() {
     try {
       console.log('Fetching game status...');
-      const response = await fetch(`${API_BASE_URL}/api/admin/game-status`, {
+      const response = await fetch(`${API_BASE_URL}/admin/game-status`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -33,7 +43,7 @@ class AdminApiService {
    * Login request
    */
   static async login(credentials) {
-    const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+    const response = await fetch(`${API_BASE_URL}/admin/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
@@ -51,7 +61,7 @@ class AdminApiService {
    * Register new admin
    */
   static async register(credentials) {
-    const response = await fetch(`${API_BASE_URL}/api/admin/register`, {
+    const response = await fetch(`${API_BASE_URL}/admin/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
@@ -74,7 +84,7 @@ class AdminApiService {
    */
   static async getPlayerStats() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/player-stats`, {
+      const response = await fetch(`${API_BASE_URL}/admin/player-stats`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -96,7 +106,7 @@ class AdminApiService {
    */
   static async getRatings() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/ratings`, {
+      const response = await fetch(`${API_BASE_URL}/admin/ratings`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -117,7 +127,7 @@ class AdminApiService {
    * Game control methods
    */
   static async startGame(round) {
-    const response = await fetch(`${API_BASE_URL}/api/admin/start-game`, {
+    const response = await fetch(`${API_BASE_URL}/admin/start-game`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ round }),
@@ -132,7 +142,7 @@ class AdminApiService {
   }
   
   static async stopGame() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/stop-game`, {
+    const response = await fetch(`${API_BASE_URL}/admin/stop-game`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -146,7 +156,7 @@ class AdminApiService {
   }
   
   static async nextRound() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/next-round`, {
+    const response = await fetch(`${API_BASE_URL}/admin/next-round`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -160,7 +170,7 @@ class AdminApiService {
   }
   
   static async formTeams(round) {
-    const response = await fetch(`${API_BASE_URL}/api/form-teams`, {
+    const response = await fetch(`${API_BASE_URL}/form-teams`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ round }),
@@ -175,7 +185,7 @@ class AdminApiService {
   }
   
   static async resetRound() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/reset-round`, {
+    const response = await fetch(`${API_BASE_URL}/admin/reset-round`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -192,7 +202,7 @@ class AdminApiService {
    * Data management methods
    */
   static async clearDatabase() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/clear`, {
+    const response = await fetch(`${API_BASE_URL}/admin/clear`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -206,7 +216,7 @@ class AdminApiService {
   }
   
   static async clearPlayers() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/clear-players`, {
+    const response = await fetch(`${API_BASE_URL}/admin/clear-players`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -220,7 +230,7 @@ class AdminApiService {
   }
   
   static async clearMatches() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/clear-matches`, {
+    const response = await fetch(`${API_BASE_URL}/admin/clear-matches`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -234,7 +244,7 @@ class AdminApiService {
   }
   
   static async clearRatings() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/clear-ratings`, {
+    const response = await fetch(`${API_BASE_URL}/admin/clear-ratings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
