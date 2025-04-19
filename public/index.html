@@ -11,26 +11,48 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       height: 100vh;
       text-align: center;
     }
-    .container {
+    
+    /* Styles for the loading state before React loads */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(102, 252, 241, 0.3);
+      border-radius: 50%;
+      border-top-color: #66fcf1;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Error styles will only show if React fails to load */
+    .error-container {
+      display: none;
       max-width: 800px;
+      margin: 20px auto;
       padding: 2rem;
       background-color: #1f2833;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
+    
     h1 {
       color: #66fcf1;
     }
-    p {
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
+    
     .button {
       display: inline-block;
       background-color: #45a29e;
@@ -41,28 +63,61 @@
       font-weight: bold;
       margin-top: 20px;
     }
-    .debug-info {
-      margin-top: 30px;
-      padding: 15px;
-      background-color: #121921;
-      border-radius: 5px;
-      text-align: left;
-      font-family: monospace;
-      overflow: auto;
-      max-height: 200px;
-    }
-    .debug-info h3 {
-      color: #45a29e;
-      margin-top: 0;
-    }
-    .debug-info pre {
-      color: #66fcf1;
-      margin: 0;
+    
+    /* Show error after 5 seconds if React doesn't load */
+    @media (prefers-reduced-motion: no-preference) {
+      .error-timeout {
+        animation: showError 1s ease-in 5s forwards;
+      }
+      @keyframes showError {
+        to { display: block; }
+      }
     }
   </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script src="/static/js/main.js"></script>
+  <!-- This is the root element where React will mount -->
+  <div id="root">
+    <!-- Loading state that will be replaced by React -->
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading Speed Friending App...</p>
+    </div>
+  </div>
+  
+  <!-- This will only be visible if React fails to load after 5 seconds -->
+  <div class="error-container error-timeout">
+    <h1>Speed Friending App</h1>
+    <p>There seems to be an issue loading the application.</p>
+    <p>If you continue to see this message, please check your internet connection or try refreshing the page.</p>
+    <a href="/" class="button">Refresh Page</a>
+    
+    <div class="debug-info" style="margin-top: 30px; text-align: left; font-family: monospace;">
+      <h3>Debug Information</h3>
+      <div id="debug-output">Loading diagnostic information...</div>
+    </div>
+  </div>
+  
+  <script>
+    // Add basic error handling for script loading failures
+    window.addEventListener('error', function(e) {
+      if (e.target.tagName === 'SCRIPT') {
+        document.querySelector('.error-container').style.display = 'block';
+        document.querySelector('#debug-output').textContent = 
+          'Failed to load: ' + e.target.src + '\nError: ' + e.message;
+      }
+    });
+    
+    // Show error container if React doesn't load after 5 seconds
+    setTimeout(function() {
+      if (!window.ReactLoaded) {
+        document.querySelector('.error-container').style.display = 'block';
+        document.querySelector('#debug-output').textContent = 
+          'Timeout waiting for React to initialize.\n' +
+          'URL: ' + window.location.href + '\n' +
+          'User Agent: ' + navigator.userAgent;
+      }
+    }, 5000);
+  </script>
 </body>
 </html>
