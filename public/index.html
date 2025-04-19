@@ -62,43 +62,7 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Speed Friending App</h1>
-    <p>This is the fallback page. If you're seeing this, the full application build hasn't been completed properly.</p>
-    <p>Please check the deployment logs for more information.</p>
-    <p>The application should be running at this URL with the proper build files.</p>
-    <a href="/" class="button">Refresh Page</a>
-    
-    <div class="debug-info">
-      <h3>Debug Information</h3>
-      <pre id="debug-output">Loading environment info...</pre>
-    </div>
-  </div>
-  
-  <script>
-    // Add debug information to help troubleshoot
-    document.addEventListener('DOMContentLoaded', function() {
-      const debugElement = document.getElementById('debug-output');
-      const info = {
-        url: window.location.href,
-        pathname: window.location.pathname,
-        userAgent: navigator.userAgent,
-        time: new Date().toString()
-      };
-      
-      debugElement.textContent = JSON.stringify(info, null, 2);
-      
-      // Check if any JS files were loaded
-      const scripts = document.querySelectorAll('script[src]');
-      if (scripts.length > 1) {
-        debugElement.textContent += '\n\nLoaded scripts:\n';
-        scripts.forEach(script => {
-          debugElement.textContent += script.src + '\n';
-        });
-      } else {
-        debugElement.textContent += '\n\nNo external scripts found.';
-      }
-    });
-  </script>
+  <div id="root"></div>
+  <script src="/static/js/main.js"></script>
 </body>
 </html>

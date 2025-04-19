@@ -264,51 +264,16 @@ app.post('/api/admin/create-match', (req, res) => {
 // Replace with this enhanced static file and route handling section
 // This should be placed before any catch-all or 404 handlers
 console.log('Setting up static file serving and client-side routing...');
-  
-// First serve static files
+
 const buildPath = path.join(__dirname, 'build');
 if (fs.existsSync(buildPath)) {
-  console.log(`Found build directory at ${buildPath}`);
   app.use(express.static(buildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
 } else {
-  console.warn(`Build directory not found at ${buildPath}`);
-  
-  // Try serving from public directory as fallback
-  const publicPath = path.join(__dirname, 'public');
-  if (fs.existsSync(publicPath)) {
-    console.log(`Serving from public directory at ${publicPath}`);
-    app.use(express.static(publicPath));
-  } else {
-    console.warn('Public directory also not found');
-  }
+  console.error('Build directory not found');
 }
-
-// Then add the catch-all route for client-side routing
-app.get('*', (req, res, next) => {
-  // Skip API and WebSocket routes
-  if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
-    console.log(`[SERVER]: API/WebSocket route: ${req.method} ${req.path}`);
-    return next();
-  }
-  
-  console.log(`[SERVER]: Serving React app for: ${req.method} ${req.path}`);
-  
-  // Try the build directory first
-  const indexPath = path.join(buildPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
-  
-  // Fall back to public directory if build doesn't exist
-  const publicIndexPath = path.join(__dirname, 'public', 'index.html');
-  if (fs.existsSync(publicIndexPath)) {
-    return res.sendFile(publicIndexPath);
-  }
-  
-  // If no index.html found anywhere, send a simple message
-  console.error(`[SERVER]: No index.html found in build or public directories`);
-  res.status(404).send('Frontend not built. Index.html not found.');
-});
 
 // This should now be the only catch-all for API routes
 app.use((req, res, next) => {
