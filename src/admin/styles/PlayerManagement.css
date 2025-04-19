@@ -1,0 +1,190 @@
+@import '../../styles/global.css';
+
+.players-table-container {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.players-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.players-table th,
+.players-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--dark-accent);
+}
+
+.players-table th {
+  background-color: var(--dark-accent);
+  color: var(--teal-light);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.players-table tbody tr:hover {
+  background-color: rgba(102, 252, 241, 0.05);
+}
+
+.no-data {
+  text-align: center;
+  color: var(--gray);
+  padding: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.edit-button, 
+.delete-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.edit-button {
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
+}
+
+.edit-button:hover {
+  background-color: var(--teal-dark);
+}
+
+.delete-button {
+  background-color: var(--danger);
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #e74c3c;
+}
+
+.edit-player-form {
+  background-color: var(--dark-accent);
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.edit-player-form h3 {
+  color: var(--teal-light);
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--gray-light);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--gray-dark);
+  border-radius: 4px;
+  background-color: var(--dark-bg);
+  color: white;
+  font-size: 16px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--teal-light);
+  outline: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.update-button,
+.cancel-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.update-button {
+  background-color: var(--teal-light);
+  color: var(--dark-bg);
+}
+
+.update-button:hover {
+  background-color: var(--teal-dark);
+}
+
+.cancel-button {
+  background-color: var(--gray-dark);
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: var(--gray);
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-badge.available {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.status-badge.matched {
+  background-color: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+}
+
+.status-badge.rating {
+  background-color: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+}
+
+.status-badge.unknown {
+  background-color: rgba(149, 165, 166, 0.2);
+  color: #95a5a6;
+}
+
+/* Row status coloring */
+tr.status-available {
+  border-left: 3px solid rgba(46, 204, 113, 0.5);
+}
+
+tr.status-matched {
+  border-left: 3px solid rgba(52, 152, 219, 0.5);
+}
+
+tr.status-rating {
+  border-left: 3px solid rgba(241, 196, 15, 0.5);
+}
+
+tr.status-unknown {
+  border-left: 3px solid rgba(149, 165, 166, 0.5);
+}

@@ -8,7 +8,13 @@ import deskIcon from '../asserts/Stationary.svg';
 import timerIcon from '../asserts/timer.svg';
 import IceBreakerDisplay from './IceBreakerDisplay';
 
-function StationaryParticipant({ match, timeLeft, timerActive }) {
+function StationaryParticipant({ match, timeLeft, timerActive, currentPlayerName, currentPlayerId }) {
+  // Improved player name display
+  const displayName = 
+    currentPlayerName && currentPlayerName !== "mm" && currentPlayerName !== "undefined" 
+      ? currentPlayerName 
+      : "Current Player";
+
   return (
     <div className="participant-container stationary">
       <div className="participant-card">
@@ -17,13 +23,30 @@ function StationaryParticipant({ match, timeLeft, timerActive }) {
           <h1>Stationary Participant</h1>
         </div>
         
+        {/* Add current player info */}
+        <div className="current-player-info">
+          <div className="current-player-avatar">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <div className="current-player-data">
+            <h2>You: {displayName}</h2>
+            <p className="participant-role">Role: Stationary (Please stay at your table)</p>
+            <p className="participant-id">ID: {currentPlayerId || 'Unknown'}</p>
+          </div>
+        </div>
+        
+        {/* Add visual separator */}
+        <div className="participant-separator">
+          <span>Matched With</span>
+        </div>
+        
         <div className="participant-info">
           <div className="match-details">
             <div className="match-avatar">
               {match.name ? match.name.charAt(0).toUpperCase() : '?'}
             </div>
             <div className="match-data">
-              <h2>You are matched with {match.name}</h2>
+              <h2>Your match: {match.name}</h2>
               <p><strong>Gender:</strong> {match.gender || 'Not specified'}</p>
               <p><strong>Interests:</strong> {match.interests || 'Not specified'}</p>
               {match.preferences && <p><strong>Preferences:</strong> {match.preferences}</p>}

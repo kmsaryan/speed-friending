@@ -42,12 +42,12 @@
 .match-avatar {
   width: 80px;
   height: 80px;
-  background-color: var(--teal-dark);
+  background-color: var(--warning);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--white);
+  color: var(--dark-bg);
   font-size: 34px;
   font-weight: bold;
   margin-right: 20px;
@@ -60,7 +60,7 @@
 }
 
 .match-data h2 {
-  color: #000000; /* Black for maximum visibility */
+  color: var(--warning) !important;
   margin-top: 0;
   margin-bottom: 15px;
   font-size: 20px;
@@ -215,4 +215,82 @@
   align-items: center;
   margin: 15px 0;
   gap: 10px;
+}
+
+/* Styles for current player info */
+.current-player-info {
+  display: flex;
+  align-items: flex-start;
+  background-color: rgba(69, 162, 158, 0.15);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--teal-light);
+}
+
+.current-player-avatar {
+  width: 60px;
+  height: 60px;
+  background-color: var(--teal-light);
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dark-bg);
+  font-size: 28px;
+  font-weight: bold;
+  margin-right: 15px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.current-player-data {
+  flex: 1;
+}
+
+.current-player-data h2 {
+  color: var(--teal-light) !important;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.participant-role, .participant-id {
+  margin: 5px 0;
+  font-size: 14px;
+  color: var(--gray-light);
+}
+
+.participant-separator {
+  text-align: center;
+  overflow: hidden;
+  margin: 20px 0;
+  position: relative;
+}
+
+.participant-separator span {
+  position: relative;
+  padding: 0 15px;
+  font-size: 16px;
+  color: var(--gray);
+}
+
+.participant-separator span::before,
+.participant-separator span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.participant-separator span::before {
+  right: 100%;
+}
+
+.participant-separator span::after {
+  left: 100%;
 }

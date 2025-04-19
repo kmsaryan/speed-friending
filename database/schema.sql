@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS players (
     preferences TEXT,
     playerType TEXT NOT NULL, -- Column to differentiate between stationary and moving players
     tableNumber TEXT, -- Column to store the table number for stationary players
-    status TEXT DEFAULT 'available' -- Column to track player availability (e.g., 'available', 'matched')
+    status TEXT DEFAULT 'available', -- Column to track player availability (e.g., 'available', 'matched')
+    interaction_count INTEGER DEFAULT 0 -- Column to track the number of interactions
 );
 
 -- Indexes for faster player lookups and matching

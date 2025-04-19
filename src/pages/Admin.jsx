@@ -8,6 +8,8 @@ import PlayerStats from '../admin/components/PlayerStats';
 import RatingsDashboard from '../admin/components/RatingsDashboard';
 import DataManagement from '../admin/components/DataManagement';
 import LiveMatchTable from '../admin/components/LiveMatchTable';
+import PlayerManagement from '../admin/components/PlayerManagement';
+import TeamBattleAdmin from '../admin/components/TeamBattleAdmin'; // Add this import
 
 // Import API Service
 import AdminApiService from '../admin/services/AdminApiService';
@@ -26,6 +28,7 @@ function Admin() {
   const [ratings, setRatings] = useState([]);
   const [gameStatus, setGameStatus] = useState('stopped');
   const [round, setRound] = useState(1);
+  const [teamBattlesRound, setTeamBattlesRound] = useState(1);
   
   // Fetch player stats when logged in
   useEffect(() => {
@@ -92,7 +95,16 @@ function Admin() {
             className={activeTab === 'live-matches' ? 'active' : ''} 
             onClick={() => setActiveTab('live-matches')}
           >
-            Live Matching
+            Match Management
+          </li>
+          <li 
+            className={activeTab === 'team-battles' ? 'active' : ''} 
+            onClick={() => {
+              setActiveTab('team-battles');
+              setTeamBattlesRound(round); // Use current round for team battles
+            }}
+          >
+            Team Battles
           </li>
           <li 
             className={activeTab === 'player-stats' ? 'active' : ''} 
@@ -111,6 +123,12 @@ function Admin() {
             onClick={() => setActiveTab('data-management')}
           >
             Data Management
+          </li>
+          <li 
+            className={activeTab === 'player-management' ? 'active' : ''} 
+            onClick={() => setActiveTab('player-management')}
+          >
+            Player Management
           </li>
         </ul>
       </div>
@@ -139,6 +157,10 @@ function Admin() {
             onRoundChange={setRound}
             onRefresh={fetchData}
             onMessage={setMessage}
+            onTeamBattlesClick={() => {
+              setActiveTab('team-battles');
+              setTeamBattlesRound(round);
+            }}
           />
         )}
 
@@ -154,6 +176,14 @@ function Admin() {
         
         {activeTab === 'live-matches' && (
           <LiveMatchTable />
+        )}
+
+        {activeTab === 'team-battles' && (
+          <TeamBattleAdmin 
+            round={teamBattlesRound}
+            onMessage={setMessage}
+            onBack={() => setActiveTab('dashboard')}
+          />
         )}
 
         {activeTab === 'player-stats' && (
@@ -175,6 +205,10 @@ function Admin() {
             onRefresh={fetchData}
             onMessage={setMessage}
           />
+        )}
+
+        {activeTab === 'player-management' && (
+          <PlayerManagement />
         )}
       </div>
     </div>

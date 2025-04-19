@@ -3,7 +3,17 @@ import '../styles/Dashboard.css';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import AdminApiService from '../services/AdminApiService';
 
-function Dashboard({ playerStats, ratings, round, gameStatus, onStatusChange, onRoundChange, onRefresh, onMessage }) {
+function Dashboard({ 
+  playerStats, 
+  ratings, 
+  round, 
+  gameStatus, 
+  onStatusChange, 
+  onRoundChange, 
+  onRefresh, 
+  onMessage,
+  onTeamBattlesClick // Add this new prop
+}) {
   const COLORS = ['#0088FE', '#00C49F'];
 
   const playerTypeData = [
@@ -132,7 +142,7 @@ function Dashboard({ playerStats, ratings, round, gameStatus, onStatusChange, on
           </button>
           <button 
             className="battle-button" 
-            onClick={() => window.location.href = `/team-battles/${round}`}
+            onClick={onTeamBattlesClick} // Change this line to use the callback
           >
             Start Team Battles
           </button>

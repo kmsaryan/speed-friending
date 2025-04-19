@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Add useNavigate import
 import socket from "../utils/socket";
 import "../styles/global.css"; // Replace colors.css import with global.css
 import "../styles/Matching.css";
@@ -21,6 +21,9 @@ function Matching() {
     wouldChatAgain: true
   });
   const [matchId, setMatchId] = useState(null); // Add match ID state
+  const navigate = useNavigate(); // Add this hook for navigation
+  const [currentPlayerName, setCurrentPlayerName] = useState("You");
+  const [notification, setNotification] = useState(null); // Add notification state
   
   // Store player ID locally
   const [playerId, setPlayerId] = useState(() => {
@@ -45,6 +48,45 @@ function Matching() {
         };
         window.addEventListener('storage', handleRegistration);
         return () => window.removeEventListener('storage', handleRegistration);
+      }
+    }
+  }, [playerId]);
+
+  // Update the player name retrieval effect
+  useEffect(() => {
+    if (playerId) {
+      // First try to get name directly from the registration form data
+      const storedName = localStorage.getItem('playerName');
+      
+      if (storedName && storedName !== "mm" && storedName !== "undefined") {
+        console.log("Using stored player name:", storedName);
+        setCurrentPlayerName(storedName);
+      } else {
+        // If no valid name in localStorage, fetch from database
+        const fetchPlayerName = async () => {
+          try {
+            console.log("Fetching player name from API for ID:", playerId);
+            const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+            const response = await fetch(`${backendUrl}/api/player/${playerId}`);
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Received player data:", data);
+              
+              if (data.name) {
+                setCurrentPlayerName(data.name);
+                localStorage.setItem('playerName', data.name);
+                console.log("Updated player name to:", data.name);
+              }
+            } else {
+              console.error("Failed to fetch player data:", response.status);
+            }
+          } catch (error) {
+            console.error("Error fetching player name:", error);
+          }
+        };
+        
+        fetchPlayerName();
       }
     }
   }, [playerId]);
@@ -98,6 +140,7 @@ function Matching() {
     // Listen for game status updates
     socket.on("game_status_update", (gameState) => {
       console.log("Received game status update:", gameState);
+      
       if (gameState.status === 'stopped') {
         setMessage("The game is currently paused. Please wait for the administrator to start the game.");
         setLoading(true);
@@ -109,16 +152,30 @@ function Matching() {
       }
       
       if (gameState.round && match && gameState.round !== match.round) {
-        setMessage(`Round ${gameState.round} has started. Looking for a new match...`);
+        setNotification({
+          type: 'info',
+          message: `Round ${gameState.round} has started! Looking for a new match...`,
+          timeout: 5000
+        });
         setMatch(null);
         setLoading(true);
         socket.emit("find_match", playerType);
       }
     });
     
-    // Listen for game status changes
+    // Enhanced listener for game status changes
     socket.on("game_status_change", (gameState) => {
       console.log("Game status changed:", gameState);
+      
+      // Show notification with the message from server if available
+      if (gameState.message) {
+        setNotification({
+          type: gameState.status === 'stopped' ? 'warning' : 'success',
+          message: gameState.message,
+          timeout: 5000
+        });
+      }
+      
       if (gameState.status === 'stopped') {
         setMessage("The game has been paused by the administrator. Please wait for the game to resume.");
         setLoading(true);
@@ -137,14 +194,40 @@ function Matching() {
       }
     });
     
-    socket.emit("find_match", playerType);
-    setLoading(true);
-
+    // Listen specifically for round changes
+    socket.on("round_changed", (data) => {
+      console.log("Round changed:", data);
+      setNotification({
+        type: 'success',
+        message: `Round ${data.round} has started!`,
+        timeout: 5000
+      });
+      
+      // If player was in a match, look for new match
+      if (match) {
+        setMatch(null);
+        setLoading(true);
+        socket.emit("find_match", playerType);
+      }
+    });
+    
     return () => {
       socket.off("game_status_update");
       socket.off("game_status_change");
+      socket.off("round_changed");
     };
   }, [playerType, match]);
+
+  // Effect to automatically hide notifications
+  useEffect(() => {
+    if (notification && notification.timeout) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, notification.timeout);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Timer effect - Synchronize timer across both players
   useEffect(() => {
@@ -225,6 +308,49 @@ function Matching() {
       socket.off("new_players_available");
     };
   }, [match, showRating, loading]);
+
+  // Add listener for team battle notifications
+  useEffect(() => {
+    // Listen for team battles starting
+    socket.on("team_battles_started", (data) => {
+      console.log("Team battles have started for round:", data.round);
+      
+      // If the player is in a team, we need to get their team info
+      if (playerId) {
+        socket.emit("get_player_team", {
+          playerId,
+          round: data.round
+        });
+      }
+    });
+    
+    // Listen for player team info
+    socket.on("player_team_info", (data) => {
+      if (data.found && data.teamId) {
+        console.log("Player is in team:", data.teamId);
+        
+        // Store team info in localStorage for persistence
+        localStorage.setItem('playerTeamId', data.teamId);
+        if (data.battleId) {
+          localStorage.setItem('playerBattleId', data.battleId);
+        }
+        
+        // Navigate to team battle page
+        navigate(`/team-battle/${data.teamId}`);
+      } else if (data.error) {
+        console.error("Error getting team info:", data.error);
+        setMessage("Error checking your team status.");
+      } else {
+        console.log("Player is not in a team");
+        setMessage("You are not in a team for the current round.");
+      }
+    });
+    
+    return () => {
+      socket.off("team_battles_started");
+      socket.off("player_team_info");
+    };
+  }, [playerId, navigate]);
 
   // Update toggleTimer function to emit timer events to the room
   const toggleTimer = () => {
@@ -346,6 +472,13 @@ function Matching() {
   // Render matched state with the appropriate component
   return (
     <div className="matching-container">
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+          <button className="close-btn" onClick={() => setNotification(null)}>×</button>
+        </div>
+      )}
+      
       <h2 className="match-header">You've been matched!</h2>
       
       {/* Only stationary players can control the timer */}
@@ -368,13 +501,17 @@ function Matching() {
         <StationaryParticipant 
           match={match} 
           timeLeft={timeLeft} 
-          timerActive={timerActive} 
+          timerActive={timerActive}
+          currentPlayerName={currentPlayerName}
+          currentPlayerId={playerId}
         />
       ) : (
         <MovingParticipant 
           match={match} 
           timeLeft={timeLeft} 
-          timerActive={timerActive} 
+          timerActive={timerActive}
+          currentPlayerName={currentPlayerName}
+          currentPlayerId={playerId}
         />
       )}
 

@@ -46,6 +46,12 @@ function PlayerRegistration() {
     e.preventDefault();
     console.log('Submitting registration form:', formData);
 
+    // Validate the name to make sure it's not empty or "mm"
+    if (!formData.name || formData.name.trim() === "" || formData.name === "mm") {
+      alert("Please enter a valid name");
+      return;
+    }
+
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
     try {
@@ -59,12 +65,17 @@ function PlayerRegistration() {
         const data = await response.json();
         console.log('Registration successful, player ID:', data.id);
         
-        // Store player ID in localStorage for persistence across page refreshes
+        // Store player ID and NAME in localStorage for persistence
         localStorage.setItem('playerId', data.id);
+        localStorage.setItem('playerName', formData.name.trim());
+        localStorage.setItem('playerType', formData.playerType);
+        
+        console.log(`Stored player name "${formData.name}" in localStorage`);
         
         // Register the player with the Socket.IO server
         socket.emit('register_player', {
           playerId: data.id,
+          playerName: formData.name,
           playerType: formData.playerType
         });
         

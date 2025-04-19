@@ -171,6 +171,130 @@ router.get('/admin/players', (req, res) => {
   );
 });
 
+// Delete a player
+router.delete('/admin/players/:id', (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Player ID is required' });
+  }
+
+  db.get('SELECT * FROM players WHERE id = ?', [id], (err, player) => {
+    if (err) {
+      console.error('[ADMIN]: Error checking player:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!player) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    // Delete player's matches
+    db.run(
+      'DELETE FROM matches WHERE player_id = ? OR matched_player_id = ?',
+      [id, id],
+      (err) => {
+        if (err) {
+          console.error('[ADMIN]: Error deleting player matches:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        // Delete player's ratings
+        db.run(
+          'DELETE FROM ratings WHERE player_id = ? OR rated_player_id = ?',
+          [id, id],
+          (err) => {
+            if (err) {
+              console.error('[ADMIN]: Error deleting player ratings:', err.message);
+              return res.status(500).json({ error: 'Database error' });
+            }
+
+            // Finally, delete the player
+            db.run('DELETE FROM players WHERE id = ?', [id], function(err) {
+              if (err) {
+                console.error('[ADMIN]: Error deleting player:', err.message);
+                return res.status(500).json({ error: 'Database error' });
+              }
+
+              console.log(`[ADMIN]: Player with ID ${id} deleted successfully`);
+              res.status(200).json({ message: 'Player deleted successfully' });
+
+              // Notify clients about player deletion if Socket.IO is initialized
+              if (global.io) {
+                global.io.emit('player_deleted', { playerId: id });
+              }
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Update a player
+router.put('/admin/players/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, gender, interests, preferences, playerType, tableNumber } = req.body;
+
+  if (!id || !name || !playerType) {
+    return res.status(400).json({ error: 'Player ID, name, and type are required' });
+  }
+
+  db.get('SELECT * FROM players WHERE id = ?', [id], (err, player) => {
+    if (err) {
+      console.error('[ADMIN]: Error checking player:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!player) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    // Update the player
+    db.run(
+      `UPDATE players 
+       SET name = ?, gender = ?, interests = ?, preferences = ?, playerType = ?, tableNumber = ? 
+       WHERE id = ?`,
+      [name, gender, interests, preferences, playerType, tableNumber, id],
+      function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error updating player:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        console.log(`[ADMIN]: Player with ID ${id} updated successfully`);
+        res.status(200).json({
+          message: 'Player updated successfully',
+          player: {
+            id,
+            name,
+            gender,
+            interests,
+            preferences,
+            playerType,
+            tableNumber
+          }
+        });
+
+        // Notify clients about player update if Socket.IO is initialized
+        if (global.io) {
+          global.io.emit('player_updated', {
+            playerId: id,
+            playerData: {
+              name,
+              gender,
+              interests,
+              preferences,
+              playerType,
+              tableNumber
+            }
+          });
+        }
+      }
+    );
+  });
+});
+
 // Clear all data
 router.post('/admin/clear', (req, res) => {
   db.serialize(() => {

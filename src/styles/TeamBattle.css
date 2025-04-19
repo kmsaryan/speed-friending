@@ -1,0 +1,233 @@
+@import './global.css';
+
+.team-battle-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Roboto', sans-serif;
+  color: var(--white);
+  transition: all 0.3s ease;
+}
+
+.battle-header {
+  text-align: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.battle-header h1 {
+  color: var(--teal-light);
+  margin-bottom: 10px;
+  font-size: 32px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.battle-type-badge {
+  background-color: var(--dark-accent);
+  color: var(--teal-light);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 16px;
+  border: 1px solid var(--teal-dark);
+}
+
+.teams-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 40px 0;
+}
+
+.team-card {
+  background-color: var(--dark-accent);
+  border-radius: 10px;
+  padding: 25px;
+  width: 45%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.5s ease-out;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.team-card h2 {
+  color: var(--teal-light);
+  margin-top: 0;
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.team-card.my-team {
+  border-left: 4px solid var(--teal-light);
+}
+
+.team-card.opponent-team {
+  border-left: 4px solid var(--warning);
+}
+
+.team-card.winner {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(69, 162, 158, 0.5);
+  border: 2px solid var(--success);
+}
+
+.winner-animation {
+  animation: winnerGlow 3s;
+}
+
+.loser-animation {
+  animation: loserShake 1s;
+}
+
+@keyframes winnerGlow {
+  0% { box-shadow: none; }
+  50% { box-shadow: 0 0 50px rgba(46, 204, 113, 0.5); }
+  100% { box-shadow: none; }
+}
+
+@keyframes loserShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.team-members {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.team-member {
+  text-align: center;
+  width: 110px;
+}
+
+.member-avatar {
+  width: 60px;
+  height: 60px;
+  background-color: var(--teal-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 auto 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.member-name {
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.vs-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 10%;
+}
+
+.vs-circle {
+  background-color: var(--warning);
+  color: var(--dark-bg);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.battle-instructions {
+  background-color: var(--dark-accent);
+  padding: 25px;
+  border-radius: 10px;
+  margin: 30px 0;
+  border-left: 4px solid var(--teal-light);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.battle-instructions h3 {
+  color: var(--teal-light);
+  margin-top: 0;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.battle-instructions p {
+  color: var(--gray);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.winner-announcement {
+  background-color: var(--dark-accent);
+  padding: 25px;
+  border-radius: 10px;
+  margin: 30px 0;
+  text-align: center;
+  border: 2px solid var(--success);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.winner-announcement h2 {
+  color: var(--success);
+  margin-top: 0;
+}
+
+.loading-spinner, .error-message {
+  text-align: center;
+  padding: 50px;
+  background-color: var(--dark-accent);
+  border-radius: 10px;
+  margin: 50px 0;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid var(--teal-light);
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .teams-section {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .team-card {
+    width: 100%;
+  }
+  
+  .vs-container {
+    margin: 20px 0;
+  }
+}
+
+.team-card.not-assigned {
+  opacity: 0.7;
+  border-style: dashed;
+}

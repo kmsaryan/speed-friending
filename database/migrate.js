@@ -46,53 +46,8 @@ async function migrateDatabase() {
           
           console.log('Base schema applied, checking for required columns...');
           
-          // Check if players table exists
-          db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='players'", (err, table) => {
-            if (err) {
-              console.error('Error checking for players table:', err.message);
-              reject(err);
-              return;
-            }
-            
-            if (table) {
-              // Check if status column exists in players table
-              db.all("PRAGMA table_info(players)", (err, columns) => {
-                if (err) {
-                  console.error('Error checking columns:', err.message);
-                  reject(err);
-                  return;
-                }
-                
-                const hasStatusColumn = columns.some(col => col.name === 'status');
-                
-                if (!hasStatusColumn) {
-                  console.log('Status column missing, adding it to players table...');
-                  
-                  // Add status column to existing players table
-                  db.run('ALTER TABLE players ADD COLUMN status TEXT DEFAULT "available"', (err) => {
-                    if (err) {
-                      console.error('Error adding status column:', err.message);
-                      reject(err);
-                      return;
-                    }
-                    
-                    console.log('Status column added successfully to players table.');
-                    
-                    // Check ratings table next
-                    checkRatingsTable(db, resolve, reject);
-                  });
-                } else {
-                  console.log('Status column already exists in players table.');
-                  // Check ratings table next
-                  checkRatingsTable(db, resolve, reject);
-                }
-              });
-            } else {
-              console.log('Players table does not exist yet. It will be created with the schema.');
-              // Check ratings table next
-              checkRatingsTable(db, resolve, reject);
-            }
-          });
+          // Check if players table exists and has necessary columns
+          checkPlayersTable(db, resolve, reject);
         });
       });
     });
@@ -110,6 +65,39 @@ async function migrateDatabase() {
       }
     });
   }
+}
+
+// New function to check and fix players table
+function checkPlayersTable(db, resolve, reject) {
+  console.log('Checking players table...');
+  
+  db.all("PRAGMA table_info(players)", (err, columns) => {
+    if (err) {
+      console.error('Error checking players table columns:', err.message);
+      reject(err);
+      return;
+    }
+    
+    const hasInteractionCountColumn = columns.some(col => col.name === 'interaction_count');
+    
+    if (!hasInteractionCountColumn) {
+      console.log('Adding interaction_count column to players table...');
+      
+      db.run('ALTER TABLE players ADD COLUMN interaction_count INTEGER DEFAULT 0', (err) => {
+        if (err) {
+          console.error('Error adding interaction_count column:', err.message);
+          reject(err);
+          return;
+        }
+        
+        console.log('Successfully added interaction_count column');
+        checkRatingsTable(db, resolve, reject);
+      });
+    } else {
+      console.log('interaction_count column already exists');
+      checkRatingsTable(db, resolve, reject);
+    }
+  });
 }
 
 // New function to check and fix ratings table

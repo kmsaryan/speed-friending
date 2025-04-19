@@ -1,5 +1,7 @@
 const { Server } = require("socket.io");
 const db = require('./database'); // Import database connection
+const express = require('express');
+const router = express.Router();
 
 // Initialize game state table
 function ensureGameStateTable(callback) {
@@ -424,6 +426,85 @@ const initializeSocketServer = (server) => {
       io.in(matchRoom).emit("timer_update", { action, timeLeft });
     });
 
+    // New event handler for starting team battles
+    socket.on("start_team_battles", (data) => {
+      const { round } = data;
+      console.log(`[SOCKET LOG]: Admin started team battles for round ${round}`);
+      
+      // Broadcast to all connected clients that team battles have started
+      io.emit('team_battles_started', { round });
+    });
+
+    // New event to get player's team
+    socket.on("get_player_team", (data) => {
+      const { playerId, round } = data;
+      
+      if (!playerId) {
+        console.log(`[SOCKET LOG]: No player ID provided in get_player_team`);
+        return;
+      }
+      
+      console.log(`[SOCKET LOG]: Getting team for player ${playerId} in round ${round}`);
+      
+      db.get(
+        `SELECT t.id as team_id, 
+                t.player1_id, t.player2_id, 
+                p1.name as player1_name, p2.name as player2_name,
+                battle.id as battle_id, battle.battle_type,
+                t2.id as opponent_team_id, 
+                t2.player1_id as opponent_player1_id, t2.player2_id as opponent_player2_id,
+                p3.name as opponent_player1_name, p4.name as opponent_player2_name
+         FROM teams t
+         JOIN players p1 ON t.player1_id = p1.id
+         JOIN players p2 ON t.player2_id = p2.id
+         LEFT JOIN team_battles battle ON (battle.team1_id = t.id OR battle.team2_id = t.id)
+         LEFT JOIN teams t2 ON (battle.team1_id = t2.id OR battle.team2_id = t2.id) AND t2.id != t.id
+         LEFT JOIN players p3 ON t2.player1_id = p3.id
+         LEFT JOIN players p4 ON t2.player2_id = p4.id
+         WHERE (t.player1_id = ? OR t.player2_id = ?) AND t.round = ?`,
+        [playerId, playerId, round],
+        (err, teamData) => {
+          if (err) {
+            console.error(`[SOCKET LOG]: Error retrieving team for player ${playerId}:`, err);
+            socket.emit("player_team_info", { error: "Error retrieving team data" });
+            return;
+          }
+
+          if (!teamData) {
+            console.log(`[SOCKET LOG]: No team found for player ${playerId} in round ${round}`);
+            socket.emit("player_team_info", { found: false });
+            return;
+          }
+
+          console.log(`[SOCKET LOG]: Found team for player ${playerId}:`, teamData.team_id);
+          socket.emit("player_team_info", { 
+            found: true,
+            teamId: teamData.team_id,
+            battleId: teamData.battle_id,
+            battleType: teamData.battle_type,
+            teammate: teamData.player1_id == playerId ? {
+              id: teamData.player2_id,
+              name: teamData.player2_name
+            } : {
+              id: teamData.player1_id,
+              name: teamData.player1_name
+            },
+            opponents: teamData.opponent_team_id ? {
+              teamId: teamData.opponent_team_id,
+              player1: {
+                id: teamData.opponent_player1_id,
+                name: teamData.opponent_player1_name
+              },
+              player2: {
+                id: teamData.opponent_player2_id,
+                name: teamData.opponent_player2_name
+              }
+            } : null
+          });
+        }
+      );
+    });
+
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`[SOCKET LOG]: Player disconnected with ID: ${socket.id}`);
@@ -460,4 +541,86 @@ const initializeSocketServer = (server) => {
   return io;
 };
 
-module.exports = initializeSocketServer;
+// Admin routes for game state management
+router.post('/admin/start-game', (req, res) => {
+  const { round = 1 } = req.body;
+  
+  ensureGameStateTable(() => {
+    db.run(
+      'INSERT OR REPLACE INTO game_state (id, status, current_round, last_updated) VALUES (1, ?, ?, CURRENT_TIMESTAMP)',
+      ['running', round],
+      function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error starting game:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        console.log('[ADMIN]: Game started successfully. Round:', round);
+        
+        // Improved broadcasting to all clients
+        if (global.io) {
+          console.log('[ADMIN]: Broadcasting game start to all clients');
+          global.io.emit('game_status_change', { 
+            status: 'running', 
+            round,
+            message: `Round ${round} has started!`  // Add a user-friendly message
+          });
+        } else {
+          console.log('[ADMIN]: Socket.io not initialized, unable to broadcast');
+        }
+        
+        res.status(200).json({ message: 'Game started successfully', status: 'running', round });
+      }
+    );
+  });
+});
+
+router.post('/admin/next-round', (req, res) => {
+  const { nextRound } = req.body;
+  
+  db.get('SELECT current_round FROM game_state WHERE id = 1', [], (err, state) => {
+    if (err || !state) {
+      console.error('[ADMIN]: Error retrieving current round:', err.message);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    const currentRound = state.current_round;
+    
+    db.run(
+      'UPDATE game_state SET current_round = ?, last_updated = CURRENT_TIMESTAMP WHERE id = 1',
+      [nextRound],
+      function(err) {
+        if (err) {
+          console.error('[ADMIN]: Error advancing round:', err.message);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        console.log('[ADMIN]: Advanced to round:', nextRound);
+        
+        // Improved broadcasting for round change
+        if (global.io) {
+          console.log('[ADMIN]: Broadcasting round change to all clients');
+          global.io.emit('game_status_change', { 
+            round: nextRound,
+            message: `Round ${nextRound} has started!` // Add a user-friendly message 
+          });
+          
+          // Also broadcast a separate round_changed event for specific actions
+          global.io.emit('round_changed', { 
+            round: nextRound,
+            previousRound: currentRound
+          });
+        } else {
+          console.log('[ADMIN]: Socket.io not initialized, unable to broadcast');
+        }
+        
+        res.status(200).json({ 
+          message: `Advanced to round ${nextRound}`, 
+          round: nextRound 
+        });
+      }
+    );
+  });
+});
+
+module.exports = { initializeSocketServer, router };
