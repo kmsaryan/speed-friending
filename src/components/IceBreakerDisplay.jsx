@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/IceBreakerDisplay.css';
-import ideaIcon from '../asserts/light-bulb.svg';
+import ideaIcon from '../asserts/light-bulb.svg'; // Import the idea icon
 import icebreakers from '../data/icebreakers';
 
 function IceBreakerDisplay({ matchId }) {
