@@ -2,16 +2,13 @@ services:
   - type: web
     name: speed-friending
     env: node
-    plan: free
     buildCommand: npm run render-build
-    startCommand: npm run render-start
+    startCommand: node server.js
     envVars:
       - key: DATABASE_URL
         value: "./speed-friending.sqlite"
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: FRONTEND_URL
         value: "https://speed-friending.onrender.com"
       - key: REACT_APP_BACKEND_URL
