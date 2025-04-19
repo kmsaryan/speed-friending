@@ -2,7 +2,7 @@ services:
   - type: web
     name: speed-friending
     env: node
-    buildCommand: npm run render-build
+    buildCommand: npm install && npm run build && mkdir -p public && cp -r build/* public/
     startCommand: node server.js
     envVars:
       - key: DATABASE_URL
@@ -13,3 +13,5 @@ services:
         value: "https://speed-friending.onrender.com"
       - key: REACT_APP_BACKEND_URL
         value: "https://speed-friending.onrender.com"
+      - key: PORT
+        value: 10000

@@ -280,8 +280,10 @@ if (process.env.NODE_ENV === 'production') {
           return next();
         }
         
+        console.log(`[SERVER]: Serving index.html for route: ${req.url}`);
         const indexPath = path.join(buildPath, 'index.html');
         if (fs.existsSync(indexPath)) {
+          console.log(`[SERVER]: Sending index.html file from ${indexPath}`);
           res.sendFile(indexPath);
         } else {
           console.error(`Index file not found at ${indexPath}`);
@@ -306,35 +308,20 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Serve the React app for all non-API routes
-app.get('*', (req, res, next) => {
-  if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
-    return next(); // Skip API and WebSocket routes
+app.get('*', (req, res, next) => {;
+  if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {ext();
+    return next(); // Skip API and WebSocket routes});
   }
-
-  const indexPath = path.join(__dirname, 'build', 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
+for debugging
+  const indexPath = path.join(__dirname, 'build', 'index.html');{
+  if (fs.existsSync(indexPath)) {log(`[404]: Route not found: ${req.method} ${req.path}`);
+    res.sendFile(indexPath);eq.path });
   } else {
     console.error(`Index file not found at ${indexPath}`);
-    res.status(404).send('Frontend not built. Index.html not found.');
+    res.status(404).send('Frontend not built. Index.html not found.');st PORT = process.env.PORT || 5000;
   }
 });
-
+ on port ${PORT}`);
 // Add more debug logging for routes
-app.use((req, res, next) => {
-  const route = `${req.method} ${req.path}`;
-  console.log(`[SERVER]: Route accessed: ${route}`);
-  next();
-});
-
-// Add a catch-all route handler for debugging
-app.use((req, res, next) => {
-  console.log(`[404]: Route not found: ${req.method} ${req.path}`);
-  res.status(404).json({ error: 'Route not found', path: req.path });
-});
-
-const PORT = process.env.PORT || 5000;
-
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.use((req, res, next) => {  const route = `${req.method} ${req.path}`;  console.log(`[SERVER]: Route accessed: ${route}`);  next();});// Add a catch-all route handler for debuggingapp.use((req, res, next) => {  console.log(`[404]: Route not found: ${req.method} ${req.path}`);  res.status(404).json({ error: 'Route not found', path: req.path });});const PORT = process.env.PORT || 5000;server.listen(PORT, () => {  console.log(`Server running on port ${PORT}`);
 });
