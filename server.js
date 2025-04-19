@@ -261,67 +261,63 @@ app.post('/api/admin/create-match', (req, res) => {
   });
 });
 
-// Add this section before the last app.use() (the 404 handler)
-if (process.env.NODE_ENV === 'production') {
-  console.log('Running in production mode - serving static files');
+// Replace with this enhanced static file and route handling section
+// This should be placed before any catch-all or 404 handlers
+console.log('Setting up static file serving and client-side routing...');
   
-  // Check if build directory exists
-  try {
-    const buildPath = path.join(__dirname, 'build');
-    if (fs.existsSync(buildPath)) {
-      console.log(`Found build directory at ${buildPath}`);
-      
-      // Serve static files from the React build folder
-      app.use(express.static(buildPath));
-      
-      // Serve the React app for all other routes
-      app.get('*', (req, res, next) => {
-        if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
-          return next();
-        }
-        
-        console.log(`[SERVER]: Serving index.html for route: ${req.url}`);
-        const indexPath = path.join(buildPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-          console.log(`[SERVER]: Sending index.html file from ${indexPath}`);
-          res.sendFile(indexPath);
-        } else {
-          console.error(`Index file not found at ${indexPath}`);
-          res.status(404).send('Frontend not built. Index.html not found.');
-        }
-      });
-    } else {
-      console.warn(`Build directory not found at ${buildPath}`);
-      
-      // Try serving from public directory as fallback
-      const publicPath = path.join(__dirname, 'public');
-      if (fs.existsSync(publicPath)) {
-        console.log(`Serving from public directory at ${publicPath}`);
-        app.use(express.static(publicPath));
-      } else {
-        console.warn('Public directory also not found');
-      }
-    }
-  } catch (err) {
-    console.error('Error setting up static file serving:', err);
+// First serve static files
+const buildPath = path.join(__dirname, 'build');
+if (fs.existsSync(buildPath)) {
+  console.log(`Found build directory at ${buildPath}`);
+  app.use(express.static(buildPath));
+} else {
+  console.warn(`Build directory not found at ${buildPath}`);
+  
+  // Try serving from public directory as fallback
+  const publicPath = path.join(__dirname, 'public');
+  if (fs.existsSync(publicPath)) {
+    console.log(`Serving from public directory at ${publicPath}`);
+    app.use(express.static(publicPath));
+  } else {
+    console.warn('Public directory also not found');
   }
 }
 
-// Serve the React app for all non-API routes
-app.get('*', (req, res, next) => {;
-  if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {ext();
-    return next(); // Skip API and WebSocket routes});
+// Then add the catch-all route for client-side routing
+app.get('*', (req, res, next) => {
+  // Skip API and WebSocket routes
+  if (req.url.startsWith('/api/') || req.url.startsWith('/socket.io/')) {
+    console.log(`[SERVER]: API/WebSocket route: ${req.method} ${req.path}`);
+    return next();
   }
-for debugging
-  const indexPath = path.join(__dirname, 'build', 'index.html');{
-  if (fs.existsSync(indexPath)) {log(`[404]: Route not found: ${req.method} ${req.path}`);
-    res.sendFile(indexPath);eq.path });
-  } else {
-    console.error(`Index file not found at ${indexPath}`);
-    res.status(404).send('Frontend not built. Index.html not found.');st PORT = process.env.PORT || 5000;
+  
+  console.log(`[SERVER]: Serving React app for: ${req.method} ${req.path}`);
+  
+  // Try the build directory first
+  const indexPath = path.join(buildPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
   }
+  
+  // Fall back to public directory if build doesn't exist
+  const publicIndexPath = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(publicIndexPath)) {
+    return res.sendFile(publicIndexPath);
+  }
+  
+  // If no index.html found anywhere, send a simple message
+  console.error(`[SERVER]: No index.html found in build or public directories`);
+  res.status(404).send('Frontend not built. Index.html not found.');
 });
- on port ${PORT}`);
-// Add more debug logging for routes
-app.use((req, res, next) => {  const route = `${req.method} ${req.path}`;  console.log(`[SERVER]: Route accessed: ${route}`);  next();});// Add a catch-all route handler for debuggingapp.use((req, res, next) => {  console.log(`[404]: Route not found: ${req.method} ${req.path}`);  res.status(404).json({ error: 'Route not found', path: req.path });});const PORT = process.env.PORT || 5000;server.listen(PORT, () => {  console.log(`Server running on port ${PORT}`);
+
+// This should now be the only catch-all for API routes
+app.use((req, res, next) => {
+  console.log(`[404]: Route not found: ${req.method} ${req.path}`);
+  res.status(404).json({ error: 'Route not found', path: req.path });
+});
+
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
