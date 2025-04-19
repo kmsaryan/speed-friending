@@ -6,6 +6,7 @@ import '../styles/global.css';
 import '../styles/Participant.css';
 import deskIcon from '../asserts/Stationary.svg';
 import timerIcon from '../asserts/timer.svg';
+import IceBreakerDisplay from './IceBreakerDisplay';
 
 function StationaryParticipant({ match, timeLeft, timerActive }) {
   return (
@@ -48,6 +49,8 @@ function StationaryParticipant({ match, timeLeft, timerActive }) {
             </div>
           )}
         </div>
+
+        <IceBreakerDisplay matchId={match.matchId} />
 
         <div className="instruction">
           <p>Your match will come to your table. Please stay at your position.</p>

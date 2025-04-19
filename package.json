@@ -4,11 +4,12 @@
   "main": "index.js",
   "scripts": {
     "start": "cross-env PORT=3000 react-scripts start",
-    "build": "react-scripts build",
+    "build": "node src/utils/copyIcebreakers.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "node server.js",
-    "migrate": "node database/migrate.js"
+    "migrate": "node database/migrate.js",
+    "copy-assets": "node src/utils/copyIcebreakers.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

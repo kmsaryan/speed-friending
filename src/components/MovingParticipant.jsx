@@ -5,6 +5,7 @@ import '../styles/global.css';
 import '../styles/Participant.css';
 import walkIcon from '../asserts/walk.svg';
 import timerIcon from '../asserts/timer.svg';
+import IceBreakerDisplay from './IceBreakerDisplay';
 
 function MovingParticipant({ match, timeLeft, timerActive }) {
   return (
@@ -51,6 +52,8 @@ function MovingParticipant({ match, timeLeft, timerActive }) {
             </div>
           )}
         </div>
+
+        <IceBreakerDisplay matchId={match.matchId} />
 
         <div className="instruction">
           <p>Please approach table {match.tableNumber || '?'} to meet your match.</p>

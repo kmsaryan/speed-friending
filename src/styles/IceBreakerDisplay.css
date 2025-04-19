@@ -1,0 +1,66 @@
+@import './global.css';
+
+.icebreaker-container {
+  background-color: rgba(40, 44, 52, 0.7);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 25px 0;
+  border-left: 4px solid #45A29E;
+}
+
+.icebreaker-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.icebreaker-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+  filter: invert(80%) sepia(42%) saturate(527%) hue-rotate(130deg) brightness(105%) contrast(101%);
+}
+
+.icebreaker-header h3 {
+  margin: 0;
+  color: var(--teal-light);
+  font-size: 18px;
+}
+
+.icebreaker-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.icebreaker-item {
+  background-color: rgba(102, 252, 241, 0.1);
+  margin-bottom: 12px;
+  padding: 15px;
+  border-radius: 6px;
+  font-size: 16px;
+  color: var(--white);
+  line-height: 1.5;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.icebreaker-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.icebreaker-item:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .icebreaker-container {
+    padding: 15px;
+  }
+  
+  .icebreaker-item {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
