@@ -16,9 +16,10 @@ const serverUrl = getWebSocketURL();
 console.log(`[SOCKET LOG]: Connecting to WebSocket server at ${serverUrl}`);
 
 const socket = io(serverUrl, {
-  transports: ["websocket"],
+  transports: ["websocket", "polling"], // Add polling as fallback
   reconnection: true,
   reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
   timeout: 20000,
 });
 
@@ -31,7 +32,13 @@ socket.on("disconnect", (reason) => {
 });
 
 socket.on("connect_error", (error) => {
-  console.error(`[SOCKET ERROR]: Connection error`, error);
+  console.error(`[SOCKET ERROR]: Connection error:`, error.message);
+  
+  // Try to reconnect with polling if websocket fails
+  if (socket.io.opts.transports[0] === 'websocket') {
+    console.log("[SOCKET LOG]: Falling back to polling transport");
+    socket.io.opts.transports = ['polling', 'websocket'];
+  }
 });
 
 socket.on("reconnect_attempt", (attempt) => {

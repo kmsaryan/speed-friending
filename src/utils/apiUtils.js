@@ -14,6 +14,11 @@ export const getApiBaseUrl = () => {
   return `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api`;
 };
 
+// Export this function explicitly to fix the build error
+export const getApiUrl = (endpoint) => {
+  return `${getApiBaseUrl()}/${endpoint}`;
+};
+
 /**
  * Make a GET request with proper URL handling
  * @param {string} endpoint - API endpoint (without leading slash or 'api/' prefix)

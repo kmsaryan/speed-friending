@@ -45,7 +45,16 @@ const server = http.createServer(app);
 const io = initializeSocketServer(server);
 
 app.use(bodyParser.json());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+
+// More robust CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, new RegExp(`^https?://${process.env.RENDER_EXTERNAL_HOSTNAME}`)]
+    : process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 
 // Add debugging for routes registration
 console.log('Registering API routes...');
@@ -55,7 +64,7 @@ const registerRoutes = require('./routes/register');
 const matchRoutes = require('./routes/match');
 const ratingsRoutes = require('./routes/ratings');
 const teamsRoutes = require('./routes/teams');
-const battlesRoutes = require('./routes/battles'); 
+const battlesRoutes = require('./routes/battles');
 const playerCountRoutes = require('./routes/playerCount');
 const adminRoutes = require('./routes/admin');
 const playerRoutes = require('./routes/player');
@@ -72,13 +81,13 @@ app.use('/api', registerRoutes);
 app.use('/api', matchRoutes);
 app.use('/api', ratingsRoutes);
 app.use('/api', teamsRoutes);
-app.use('/api', battlesRoutes); 
+app.use('/api', battlesRoutes);
 app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes); // This registers all admin routes
 app.use('/api', playerRoutes);
 
 // Register reset-round route directly to ensure it works
-app.post('/api/admin/reset-round', (req, res) => {
+app.post('/api/admin/reset-round', (req, res, next) => {
   console.log('[SERVER]: Direct reset-round route called');
   
   // Forward to the handler in admin routes if it exists
@@ -264,24 +273,37 @@ app.post('/api/admin/create-match', (req, res) => {
 // Replace with this enhanced static file and route handling section
 // This should be placed before any catch-all or 404 handlers
 console.log('Setting up static file serving and client-side routing...');
-  
+
 // First serve static files
 const buildPath = path.join(__dirname, 'build');
+const publicPath = path.join(__dirname, 'public');
+
+// Set cache control for static assets
+const staticOptions = {
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // Cache for 1 day except for index.html
+    if (filePath.endsWith('index.html')) {
+      // Don't cache HTML
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
+      // Cache assets for 1 day
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+};
+
+// Serve static files with proper caching
 if (fs.existsSync(buildPath)) {
   console.log(`Found build directory at ${buildPath}`);
-  app.use(express.static(buildPath, {
-    setHeaders: (res, path) => {
-      console.log(`[STATIC FILE]: Serving ${path}`);
-    }
-  }));
+  app.use(express.static(buildPath, staticOptions));
 } else {
   console.warn(`Build directory not found at ${buildPath}`);
-  
   // Try serving from public directory as fallback
-  const publicPath = path.join(__dirname, 'public');
   if (fs.existsSync(publicPath)) {
     console.log(`Serving from public directory at ${publicPath}`);
-    app.use(express.static(publicPath));
+    app.use(express.static(publicPath, staticOptions));
   } else {
     console.warn('Public directory also not found');
   }
@@ -315,9 +337,48 @@ app.get('*', (req, res, next) => {
 });
 
 // This should now be the only catch-all for API routes
-app.use((req, res, next) => {
+app.use((req, res) => {
   console.log(`[404]: Route not found: ${req.method} ${req.path}`);
   res.status(404).json({ error: 'Route not found', path: req.path });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const message = err.message || 'Internal Server Error';
+  
+  console.error(`[ERROR]: ${message}`);
+  console.error(err.stack);
+  
+  // Don't expose stack trace in production
+  res.status(status).json({
+    error: message,
+    details: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+  });
+});
+
+// Handle process events for more graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    
+    // Close database connection
+    if (db) {
+      db.close();
+    }
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  
+  // Close database connection and exit
+  if (db) {
+    db.close();
+  }
+  
+  process.exit(1);
 });
 
 const PORT = process.env.PORT || 5000;
