@@ -5,7 +5,7 @@ import LiveMatchTable from './LiveMatchTable'; // Import LiveMatchTable
 import '../../styles/global.css';
 import '../styles/GameControl.css';
 
-function GameControl({ gameStatus, round, onStatusChange, onRoundChange, onMessage, onTabChange }) {
+function GameControl({ gameStatus, round, onStatusChange, onRoundChange, onMessage, onTabChange, onResetRound }) {
   const [gameStarting, setGameStarting] = useState(false);
   const [gameStopping, setGameStopping] = useState(false);
   const [nextingRound, setNextingRound] = useState(false);
@@ -183,7 +183,7 @@ function GameControl({ gameStatus, round, onStatusChange, onRoundChange, onMessa
               {nextingRound ? 'Advancing...' : 'Next Round'}
             </button>
             <button 
-              onClick={handleResetRound}
+              onClick={onResetRound}
               disabled={resettingRound || round === 1}
               className={`control-button danger ${round === 1 ? 'disabled' : ''}`}
             >

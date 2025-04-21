@@ -175,6 +175,28 @@ class AdminApiService {
   }
   
   /**
+   * Reset the game round to 1
+   */
+  static async resetRound() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reset-round`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
+        throw new Error(error.error || 'Failed to reset round');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error resetting round:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Data management methods
    */
   static async clearDatabase() {

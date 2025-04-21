@@ -98,6 +98,17 @@ function Admin() {
     }
   };
 
+  const handleResetRound = async () => {
+    try {
+      const response = await AdminApiService.resetRound();
+      setMessage(response.message || 'Round reset successfully');
+      setRound(1); // Update the round state to 1
+    } catch (error) {
+      console.error('Error resetting round:', error);
+      setMessage('Failed to reset round. Please try again.');
+    }
+  };
+
   // If not logged in, show login form
   if (!isLoggedIn) {
     return <AdminAuth onLogin={setIsLoggedIn} onMessage={setMessage} />;
@@ -212,6 +223,7 @@ function Admin() {
             onStatusChange={setGameStatus}
             onRoundChange={setRound}
             onMessage={setMessage}
+            onResetRound={handleResetRound} // Pass the reset handler
             onTabChange={changeTab}
           />
         )}
