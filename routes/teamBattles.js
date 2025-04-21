@@ -64,12 +64,22 @@ router.get('/team-battles/:round', (req, res) => {
   
   console.log(`[TEAM BATTLES]: Fetching battles for round ${round}`);
   
-  try {
-    db.all(
-      `SELECT b.id, b.team1_id, b.team2_id, b.battle_type, b.winner_id, b.status,
-              t1.compatibility_score AS team1_score, t2.compatibility_score AS team2_score,
-              p1.name AS team1_player1_name, p2.name AS team1_player2_name,
-              p3.name AS team2_player1_name, p4.name AS team2_player2_name
+  // First check if status column exists in team_battles table
+  db.all("PRAGMA table_info(team_battles)", (err, columns) => {
+    if (err) {
+      console.error('[TEAM BATTLES]: Error checking table columns:', err.message);
+      return res.status(500).json({ error: 'Database error', message: err.message });
+    }
+    
+    const hasStatusColumn = columns.some(col => col.name === 'status');
+    console.log(`[TEAM BATTLES]: Status column exists: ${hasStatusColumn}`);
+    
+    // Build query WITHOUT using status column since it doesn't exist
+    let query = `
+      SELECT b.id, b.team1_id, b.team2_id, b.battle_type, b.winner_id, 
+             t1.compatibility_score AS team1_score, t2.compatibility_score AS team2_score,
+             p1.name AS team1_player1_name, p2.name AS team1_player2_name,
+             p3.name AS team2_player1_name, p4.name AS team2_player2_name
        FROM team_battles b
        JOIN teams t1 ON b.team1_id = t1.id
        JOIN teams t2 ON b.team2_id = t2.id
@@ -78,21 +88,24 @@ router.get('/team-battles/:round', (req, res) => {
        JOIN players p3 ON t2.player1_id = p3.id
        JOIN players p4 ON t2.player2_id = p4.id
        WHERE b.round = ?
-       ORDER BY b.id`,
-      [round],
-      (err, battles) => {
-        if (err) {
-          console.error('[TEAM BATTLES]: Error fetching team battles:', err.message);
-          return res.status(500).json({ error: 'Database error', message: err.message });
-        }
-        
-        res.status(200).json({ battles: battles || [] });
+       ORDER BY b.id
+    `;
+    
+    db.all(query, [round], (err, battles) => {
+      if (err) {
+        console.error('[TEAM BATTLES]: Error fetching team battles:', err.message);
+        return res.status(500).json({ error: 'Database error', message: err.message });
       }
-    );
-  } catch (error) {
-    console.error('[TEAM BATTLES]: Unexpected error:', error.message);
-    res.status(500).json({ error: 'Server error', message: error.message });
-  }
+      
+      // Add virtual status field to each battle based on winner_id
+      const battlesWithStatus = battles ? battles.map(battle => ({
+        ...battle,
+        status: battle.winner_id ? 'completed' : 'pending'
+      })) : [];
+      
+      res.status(200).json({ battles: battlesWithStatus });
+    });
+  });
 });
 
 // Broadcast battle results

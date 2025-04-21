@@ -142,6 +142,61 @@ router.get('/teams/:round', (req, res) => {
   );
 });
 
+// Add an endpoint to get a player's team
+router.get('/player-team/:playerId', (req, res) => {
+  const { playerId } = req.params;
+  const round = parseInt(req.query.round, 10) || 2;
+  
+  if (!playerId) {
+    return res.status(400).json({ error: 'Player ID is required' });
+  }
+  
+  // Query to find the team containing this player
+  db.get(
+    `SELECT t.id as teamId, t.player1_id, t.player2_id, t.compatibility_score, 
+            p1.name as player1_name, p2.name as player2_name
+     FROM teams t
+     JOIN players p1 ON t.player1_id = p1.id
+     JOIN players p2 ON t.player2_id = p2.id
+     WHERE (t.player1_id = ? OR t.player2_id = ?) AND t.round = ?`,
+    [playerId, playerId, round],
+    (err, team) => {
+      if (err) {
+        console.error('Error fetching player team:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!team) {
+        return res.status(200).json({ 
+          found: false,
+          message: 'No team found for this player in this round'
+        });
+      }
+      
+      // Determine the teammate based on which player ID matches
+      let teammateId, teammateName;
+      
+      if (parseInt(team.player1_id, 10) === parseInt(playerId, 10)) {
+        teammateId = team.player2_id;
+        teammateName = team.player2_name;
+      } else {
+        teammateId = team.player1_id;
+        teammateName = team.player1_name;
+      }
+      
+      res.status(200).json({
+        found: true,
+        teamId: team.teamId,
+        compatibility: team.compatibility_score,
+        teammate: {
+          id: teammateId,
+          name: teammateName
+        }
+      });
+    }
+  );
+});
+
 // Add the endpoint for getting team by player ID
 router.get('/player-team/:playerId', (req, res) => {
   const { playerId } = req.params;
