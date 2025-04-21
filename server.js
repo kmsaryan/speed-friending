@@ -68,6 +68,7 @@ const battlesRoutes = require('./routes/battles');
 const teamBattlesRoutes = require('./routes/teamBattles');
 const playerCountRoutes = require('./routes/playerCount');
 const adminRoutes = require('./routes/admin');
+const playerRoutes = require('./routes/player'); // Import playerRoutes
 
 // Print available routes for debugging
 console.log('Available admin routes:');
@@ -100,7 +101,7 @@ app.use('/api', battlesRoutes);
 app.use('/api', teamBattlesRoutes);
 app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes); // This registers all admin routes
-app.use('/api', playerRoutes);
+app.use('/api', playerRoutes); // Use playerRoutes
 
 // Register reset-round route directly to ensure it works
 app.post('/api/admin/reset-round', (req, res, next) => {
