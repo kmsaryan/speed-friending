@@ -40,7 +40,7 @@ class AdminApiService {
     try {
       return await apiGet('admin/player-stats');
     } catch (error) {
-      console.error('Error fetching player stats:', error);
+      console.error('[AdminApiService] Error fetching player stats:', error); // Add detailed logging
       return { total: 0, stationary: 0, moving: 0, matched: 0, available: 0 };
     }
   }
@@ -52,7 +52,7 @@ class AdminApiService {
     try {
       return await apiGet('admin/ratings');
     } catch (error) {
-      console.error('Error fetching ratings:', error);
+      console.error('[AdminApiService] Error fetching ratings:', error); // Add detailed logging
       return [];
     }
   }
@@ -97,7 +97,7 @@ class AdminApiService {
 
       return response.json();
     } catch (error) {
-      console.error('Error resetting round:', error);
+      console.error('[AdminApiService] Error resetting round:', error); // Add detailed logging
       throw error;
     }
   }
@@ -128,7 +128,7 @@ class AdminApiService {
     try {
       return await apiGet('admin/players');
     } catch (error) {
-      console.error('Error fetching players:', error);
+      console.error('[AdminApiService] Error fetching players:', error); // Add detailed logging
       return [];
     }
   }
@@ -137,7 +137,7 @@ class AdminApiService {
     try {
       return await apiGet(`admin/matches?round=${round}`);
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      console.error('[AdminApiService] Error fetching matches:', error); // Add detailed logging
       return [];
     }
   }
@@ -154,7 +154,7 @@ class AdminApiService {
     try {
       return await apiGet(`teams/${round}`);
     } catch (error) {
-      console.error('Error fetching teams:', error);
+      console.error('[AdminApiService] Error fetching teams:', error); // Add detailed logging
       throw error;
     }
   }
@@ -175,7 +175,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error fetching teams:', error);
+      console.error('[AdminApiService] Error fetching teams:', error); // Add detailed logging
       throw error;
     }
   }
@@ -196,7 +196,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error fetching battles:', error);
+      console.error('[AdminApiService] Error fetching battles:', error); // Add detailed logging
       throw error;
     }
   }
@@ -217,7 +217,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error fetching players:', error);
+      console.error('[AdminApiService] Error fetching players:', error); // Add detailed logging
       throw error;
     }
   }
@@ -238,7 +238,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      console.error('[AdminApiService] Error fetching matches:', error); // Add detailed logging
       throw error;
     }
   }
@@ -259,7 +259,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error ending match:', error);
+      console.error('[AdminApiService] Error ending match:', error); // Add detailed logging
       throw error;
     }
   }
@@ -281,7 +281,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error deleting player:', error);
+      console.error('[AdminApiService] Error deleting player:', error); // Add detailed logging
       throw error;
     }
   }
@@ -304,7 +304,7 @@ class AdminApiService {
       
       return response.json();
     } catch (error) {
-      console.error('Error updating player:', error);
+      console.error('[AdminApiService] Error updating player:', error); // Add detailed logging
       throw error;
     }
   }

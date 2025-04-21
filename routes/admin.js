@@ -99,9 +99,10 @@ router.get('/admin/player-stats', (req, res) => {
     
     db.get(query, (err, stats) => {
       if (err) {
-        console.error('Database error fetching player stats:', err.message);
+        console.error('[Admin] Database error fetching player stats:', err.message); // Add logging
         return res.status(500).json({ error: 'Database error' });
       }
+      console.log('[Admin] Player stats fetched:', stats); // Add logging
       res.status(200).json(stats || { total: 0, stationary: 0, moving: 0, matched: 0, available: 0 });
     });
   });

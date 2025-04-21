@@ -42,6 +42,7 @@ function Admin() {
   // Fetch player stats when logged in
   useEffect(() => {
     if (isLoggedIn) {
+      console.log('[Admin] Fetching data after login...'); // Add logging
       setLoading(true);
       fetchData().finally(() => setLoading(false));
     }

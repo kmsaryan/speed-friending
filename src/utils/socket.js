@@ -32,7 +32,7 @@ socket.on("disconnect", (reason) => {
 });
 
 socket.on("connect_error", (error) => {
-  console.error(`[SOCKET ERROR]: Connection error:`, error.message);
+  console.error('[SOCKET ERROR]: Connection error:', error.message); // Add detailed logging
   
   // Try to reconnect with polling if websocket fails
   if (socket.io.opts.transports[0] === 'websocket') {
