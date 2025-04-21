@@ -7,6 +7,7 @@ import "../styles/Matching.css";
 import StationaryParticipant from "../components/StationaryParticipant";
 import MovingParticipant from "../components/MovingParticipant";
 import RatingForm from "../components/RatingForm";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function Matching() {
   const [match, setMatch] = useState(null);
@@ -417,15 +418,7 @@ function Matching() {
 
   // Render loading state
   if (loading) {
-    return (
-      <div className="matching-container">
-        <h2 className="match-header">{message}</h2>
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Searching for a compatible match...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message={message} />;
   }
 
   // Render rating form using the new component

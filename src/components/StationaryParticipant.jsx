@@ -7,6 +7,7 @@ import '../styles/Participant.css';
 import deskIcon from '../asserts/Stationary.svg';
 import timerIcon from '../asserts/timer.svg';
 import IceBreakerDisplay from './IceBreakerDisplay';
+import LoadingSpinner from '../components/LoadingSpinner'; // Import LoadingSpinner
 
 function StationaryParticipant({ match, timeLeft, timerActive, currentPlayerName, currentPlayerId }) {
   // Improved player name display
@@ -14,6 +15,10 @@ function StationaryParticipant({ match, timeLeft, timerActive, currentPlayerName
     currentPlayerName && currentPlayerName !== "mm" && currentPlayerName !== "undefined" 
       ? currentPlayerName 
       : "Current Player";
+
+  if (!match) {
+    return <LoadingSpinner message="Loading match details..." />;
+  }
 
   return (
     <div className="participant-container stationary">

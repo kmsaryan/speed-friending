@@ -6,6 +6,7 @@ import '../styles/Participant.css';
 import walkIcon from '../asserts/walk.svg';
 import timerIcon from '../asserts/timer.svg';
 import IceBreakerDisplay from './IceBreakerDisplay';
+import LoadingSpinner from '../components/LoadingSpinner'; // Import LoadingSpinner
 
 function MovingParticipant({ match, timeLeft, timerActive, currentPlayerName, currentPlayerId }) {
   // Improved player name display
@@ -18,6 +19,10 @@ function MovingParticipant({ match, timeLeft, timerActive, currentPlayerName, cu
   React.useEffect(() => {
     console.log(`[MovingParticipant] timeLeft updated: ${timeLeft}, timerActive: ${timerActive}`);
   }, [timeLeft, timerActive]);
+
+  if (!match) {
+    return <LoadingSpinner message="Loading match details..." />;
+  }
 
   return (
     <div className="participant-container moving">

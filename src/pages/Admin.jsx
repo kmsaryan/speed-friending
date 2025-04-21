@@ -12,6 +12,7 @@ import PlayerManagement from '../admin/components/PlayerManagement';
 import TeamBattleAdmin from '../admin/components/TeamBattleAdmin';
 import MatchManagement from '../admin/components/MatchManagement';
 import TeamBattleLanding from '../admin/components/TeamBattleLanding';
+import LoadingSpinner from '../components/LoadingSpinner'; // Import LoadingSpinner
 // Import API Service
 import AdminApiService from '../admin/services/AdminApiService';
 
@@ -31,6 +32,7 @@ function Admin() {
   const [round, setRound] = useState(1);
   const [teamBattlesRound, setTeamBattlesRound] = useState(1);
   const [matchView, setMatchView] = useState('current'); // For match history view
+  const [loading, setLoading] = useState(true); // Add loading state
   
   // Function to change active tab
   const changeTab = (tabName) => {
@@ -40,7 +42,8 @@ function Admin() {
   // Fetch player stats when logged in
   useEffect(() => {
     if (isLoggedIn) {
-      fetchData();
+      setLoading(true);
+      fetchData().finally(() => setLoading(false));
     }
   }, [isLoggedIn]);
   
@@ -108,6 +111,10 @@ function Admin() {
       setMessage('Failed to reset round. Please try again.');
     }
   };
+
+  if (loading) {
+    return <LoadingSpinner message="Loading admin dashboard..." />;
+  }
 
   // If not logged in, show login form
   if (!isLoggedIn) {
