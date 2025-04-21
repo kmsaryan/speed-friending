@@ -1,6 +1,6 @@
 //PlayerRegistration.jsx
 // File: src/components/PlayerRegistration.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/global.css'; // Replace colors.css import with global.css
 import '../styles/PlayerRegistration.css';
@@ -17,7 +17,42 @@ function PlayerRegistration() {
     tableNumber: '',
   });
   const [warning, setWarning] = useState('');
+  const [playerCounts, setPlayerCounts] = useState({
+    stationary: 0,
+    moving: 0,
+    total: 0
+  });
   const navigate = useNavigate();
+
+  // Fetch player counts on component mount
+  useEffect(() => {
+    const fetchPlayerCounts = async () => {
+      try {
+        // Use the apiGet utility directly without prepending the API URL
+        const stationaryData = await apiGet('player-count?playerType=stationary');
+        const movingData = await apiGet('player-count?playerType=moving');
+        
+        setPlayerCounts({
+          stationary: stationaryData.count || 0,
+          moving: movingData.count || 0,
+          total: (stationaryData.count || 0) + (movingData.count || 0)
+        });
+
+        console.log('Player counts fetched:', {
+          stationary: stationaryData.count,
+          moving: movingData.count
+        });
+      } catch (error) {
+        console.error('Error fetching player counts:', error);
+      }
+    };
+
+    fetchPlayerCounts();
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchPlayerCounts, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -25,9 +60,25 @@ function PlayerRegistration() {
 
     if (name === 'playerType') {
       try {
+        // Use the apiGet utility directly without prepending the API URL
         const data = await apiGet(`player-count?playerType=${value}`);
-        if (data.count > 5) { // Example threshold
-          setWarning(`There are already many ${value} players. Consider selecting a different type.`);
+        const oppositeType = value === 'stationary' ? 'moving' : 'stationary';
+        const oppositeData = await apiGet(`player-count?playerType=${oppositeType}`);
+        
+        // Update the player counts
+        setPlayerCounts(prev => ({
+          ...prev,
+          [value]: data.count || 0,
+          [oppositeType]: oppositeData.count || 0
+        }));
+
+        // Calculate imbalance and provide guidance
+        const threshold = 3; // Configurable threshold for imbalance
+        const imbalance = Math.abs((data.count || 0) - (oppositeData.count || 0));
+        
+        if (imbalance >= threshold && (data.count || 0) > (oppositeData.count || 0)) {
+          setWarning(`There are already ${data.count} ${value} players (${imbalance} more than ${oppositeType}). 
+                    Please consider selecting ${oppositeType} to help balance the groups.`);
         } else {
           setWarning('');
         }
@@ -42,7 +93,7 @@ function PlayerRegistration() {
     e.preventDefault();
     console.log('Submitting registration form:', formData);
 
-    // Validate the name to make sure it's not empty or "mm"
+    // Validate the name
     if (!formData.name || formData.name.trim() === "" || formData.name === "mm") {
       alert("Please enter a valid name");
       return;
@@ -52,22 +103,23 @@ function PlayerRegistration() {
       const data = await apiPost('register', formData);
       console.log('Registration successful, player ID:', data.id);
       
-      // Store player ID and NAME in localStorage for persistence
+      // Store essential data in localStorage
       localStorage.setItem('playerId', data.id);
-      localStorage.setItem('playerName', formData.name.trim());
-      localStorage.setItem('playerType', formData.playerType);
       
-      console.log(`Stored player name "${formData.name}" in localStorage`);
-      
-      // Register the player with the Socket.IO server
-      socket.emit('register_player', {
+      // Register the player with socket.io
+      socket.emit("register_player", {
         playerId: data.id,
-        playerName: formData.name,
         playerType: formData.playerType
       });
       
-      console.log('Registration successful, redirecting to matching page.');
-      navigate(`/matching/${formData.playerType}`);
+      console.log(`Navigating to matching/${formData.playerType}`);
+      
+      // Wait a moment to ensure socket registration completes
+      setTimeout(() => {
+        // Use navigate with a forceRefresh to ensure proper loading
+        navigate(`/matching/${formData.playerType}`, { replace: true });
+      }, 100);
+      
     } catch (error) {
       console.error('Error during registration:', error);
       alert('An error occurred during registration. Please try again.');
@@ -81,6 +133,23 @@ function PlayerRegistration() {
         <h2>Player Registration</h2>
       </div>
       <p>Sign up to participate in Speed Friending.</p>
+      
+      {/* Player count stats display */}
+      <div className="player-stats">
+        <div className="stat-box">
+          <span className="stat-value">{playerCounts.total}</span>
+          <span className="stat-label">Total Players</span>
+        </div>
+        <div className="stat-box">
+          <span className="stat-value">{playerCounts.stationary}</span>
+          <span className="stat-label">Stationary</span>
+        </div>
+        <div className="stat-box">
+          <span className="stat-value">{playerCounts.moving}</span>
+          <span className="stat-label">Moving</span>
+        </div>
+      </div>
+      
       {warning && <p className="warning">{warning}</p>}
       
       <form onSubmit={handleSubmit} className="dark-form">
@@ -119,12 +188,17 @@ function PlayerRegistration() {
           </div>
           
           <div className="form-group">
-            <label>Player Type</label>
+            <label>Player Type <i className="info-tooltip" title="Stationary players stay at their table. Moving players rotate tables.">ⓘ</i></label>
             <select name="playerType" value={formData.playerType} onChange={handleChange} required>
               <option value="">Select your player type</option>
-              <option value="stationary">Stationary</option>
-              <option value="moving">Moving</option>
+              <option value="stationary">Stationary (Stay at your table)</option>
+              <option value="moving">Moving (Rotate between tables)</option>
             </select>
+            <div className="player-type-info">
+              <p><strong>Stationary:</strong> You'll stay at your assigned table while others come to you.</p>
+              <p><strong>Moving:</strong> You'll move to different tables to meet stationary players.</p>
+              <p className="balance-notice">For the best experience, we need a balanced number of each player type.</p>
+            </div>
           </div>
           
           {formData.playerType === 'stationary' && (

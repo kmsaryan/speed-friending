@@ -64,24 +64,40 @@ const registerRoutes = require('./routes/register');
 const matchRoutes = require('./routes/match');
 const ratingsRoutes = require('./routes/ratings');
 const teamsRoutes = require('./routes/teams');
-const battlesRoutes = require('./routes/battles');
+const battlesRoutes = require('./routes/battles'); 
+const teamBattlesRoutes = require('./routes/teamBattles');
 const playerCountRoutes = require('./routes/playerCount');
 const adminRoutes = require('./routes/admin');
-const playerRoutes = require('./routes/player');
 
-// Explicitly check for reset-round route and log result
-console.log('Checking admin routes for reset-round:');
-const hasResetRoute = adminRoutes.stack && adminRoutes.stack.some(
-  r => r.route && r.route.path && r.route.path.includes('reset-round')
-);
-console.log(`Reset route exists in admin routes: ${hasResetRoute ? 'Yes' : 'No'}`);
+// Print available routes for debugging
+console.log('Available admin routes:');
+adminRoutes.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(`Route: ${r.route.path}`);
+  }
+});
+
+console.log('Available battle routes:');
+battlesRoutes.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(`Route: ${r.route.path}`);
+  }
+});
+
+console.log('Available team battle routes:');
+teamBattlesRoutes.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(`Route: ${r.route.path}`);
+  }
+});
 
 // Use modular routes
 app.use('/api', registerRoutes);
 app.use('/api', matchRoutes);
 app.use('/api', ratingsRoutes);
 app.use('/api', teamsRoutes);
-app.use('/api', battlesRoutes);
+app.use('/api', battlesRoutes); 
+app.use('/api', teamBattlesRoutes);
 app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes); // This registers all admin routes
 app.use('/api', playerRoutes);

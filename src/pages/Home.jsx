@@ -82,6 +82,56 @@ function Home() {
                 <p>Rate your conversations and get matched with compatible participants.</p>
               </div>
             </div>
+            
+            {/* New detailed explanation about the game */}
+            <div className="game-description">
+              <h3>About Speed Friending</h3>
+              <p>Speed Friending is designed to help you make meaningful connections in a fun, structured environment. Unlike traditional networking, our focus is on genuine connection rather than professional advancement.</p>
+              
+              <div className="game-steps">
+                <div className="step">
+                  <span className="step-number">1</span>
+                  <div className="step-content">
+                    <h4>Registration & Role Assignment</h4>
+                    <p>After registering, you'll be assigned as either a "Stationary" participant (you stay at your designated table) or a "Moving" participant (you rotate between tables). We aim to keep these groups balanced for the best experience.</p>
+                  </div>
+                </div>
+                
+                <div className="step">
+                  <span className="step-number">2</span>
+                  <div className="step-content">
+                    <h4>Match & Interact</h4>
+                    <p>Our algorithm will match you with another participant. Each interaction lasts for a set time (typically 3 minutes), guided by a timer. This creates a focused environment for meaningful conversation.</p>
+                  </div>
+                </div>
+                
+                <div className="step">
+                  <span className="step-number">3</span>
+                  <div className="step-content">
+                    <h4>Rate & Provide Feedback</h4>
+                    <p>After each conversation, you'll rate the interaction based on enjoyment, depth, and whether you'd like to chat again. This helps our system make better matches in future rounds.</p>
+                  </div>
+                </div>
+                
+                <div className="step">
+                  <span className="step-number">4</span>
+                  <div className="step-content">
+                    <h4>Team Formation & Activities</h4>
+                    <p>In later rounds, participants with high compatibility are formed into teams for fun group activities and challenges, creating opportunities for deeper connections.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="game-tips">
+                <h4>Tips for a Great Experience:</h4>
+                <ul>
+                  <li>Be open and authentic in your conversations</li>
+                  <li>Ask thoughtful questions beyond typical small talk</li>
+                  <li>Listen actively to your conversation partner</li>
+                  <li>Exchange contact information if you'd like to continue the conversation later</li>
+                </ul>
+              </div>
+            </div>
           </section>
           <button onClick={() => setShowRegistration(true)} className="btn-primary btn-rounded">
             Join Now
@@ -100,9 +150,7 @@ function Home() {
           <p className="admin-note">Admin access enabled. Click to enter admin panel.</p>
         </div>
       )}
-
       <div className="footer-note">
-        <p>Press Ctrl+Alt+A for admin access</p>
       </div>
     </div>
   );

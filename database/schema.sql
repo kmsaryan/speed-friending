@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS team_battles (
     round INTEGER NOT NULL,
     winner_id INTEGER,
     battle_type TEXT,
+    status TEXT DEFAULT 'pending', -- Add the missing status column
     FOREIGN KEY (team1_id) REFERENCES teams(id),
     FOREIGN KEY (team2_id) REFERENCES teams(id),
     FOREIGN KEY (winner_id) REFERENCES teams(id)

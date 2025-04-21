@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminApiService from '../services/AdminApiService';
 import '../styles/PlayerManagement.css';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 function PlayerManagement() {
   const [players, setPlayers] = useState([]);
@@ -15,6 +16,7 @@ function PlayerManagement() {
     playerType: '',
     tableNumber: ''
   });
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     fetchPlayers();
@@ -33,17 +35,22 @@ function PlayerManagement() {
     }
   };
 
-  const handleDeletePlayer = async (playerId) => {
-    if (!window.confirm('Are you sure you want to delete this player?')) {
-      return;
-    }
+  const handleDeletePlayer = (playerId) => {
+    if (window.confirm(`Are you sure you want to delete player #${playerId}?`)) {
+      setLoading(true);
 
-    try {
-      await AdminApiService.deletePlayer(playerId);
-      setPlayers(players.filter(player => player.id !== playerId));
-    } catch (error) {
-      console.error('Error deleting player:', error);
-      setError('Failed to delete player. Please try again.');
+      AdminApiService.deletePlayer(playerId)
+        .then(() => {
+          setPlayers(players.filter(player => player.id !== playerId));
+          setNotification({ type: 'success', message: 'Player deleted successfully' });
+        })
+        .catch(error => {
+          console.error('Error deleting player:', error);
+          setNotification({ type: 'error', message: error.message || 'Failed to delete player' });
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   };
 
@@ -89,15 +96,7 @@ function PlayerManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="admin-section">
-        <h2>Player Management</h2>
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading players...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading player data..." />;
   }
 
   if (error) {
@@ -115,6 +114,12 @@ function PlayerManagement() {
   return (
     <div className="admin-section">
       <h2>Player Management</h2>
+
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          <p>{notification.message}</p>
+        </div>
+      )}
 
       <div className="control-card">
         <div className="table-header">

@@ -155,4 +155,31 @@ router.post('/battles/:id/winner', (req, res) => {
   );
 });
 
+// Broadcast battle results
+router.post('/battle-result', (req, res) => {
+  const { battleId, winnerId } = req.body;
+
+  if (!battleId || !winnerId) {
+    return res.status(400).json({ error: 'Battle ID and winner ID are required' });
+  }
+
+  db.run(
+    'UPDATE team_battles SET winner_id = ? WHERE id = ?',
+    [winnerId, battleId],
+    function(err) {
+      if (err) {
+        console.error('[TEAM BATTLE]: Error updating battle result:', err.message);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      // Notify all players in the battle if Socket.IO is initialized
+      if (global.io) {
+        global.io.emit('battle_result', { battleId, winnerId });
+      }
+
+      res.status(200).json({ message: 'Battle result updated successfully' });
+    }
+  );
+});
+
 module.exports = router;

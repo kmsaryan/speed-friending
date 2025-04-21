@@ -4,9 +4,12 @@
 
 // Helper function to determine the base API URL
 export const getApiBaseUrl = () => {
-  // Check both explicit NODE_ENV and hostname to ensure correct behavior in production
-  if (process.env.NODE_ENV === 'production' || window.location.hostname !== 'localhost') {
-    // Use relative URL in production
+  // When running on a single port (production or built app)
+  // we should use relative URLs for API requests
+  if (process.env.NODE_ENV === 'production' || 
+      window.location.hostname !== 'localhost' || 
+      window.location.port === '5000') {
+    // Use relative URL in production or single-port configuration
     return '/api';
   }
   
@@ -16,55 +19,44 @@ export const getApiBaseUrl = () => {
 
 // Export this function explicitly to fix the build error
 export const getApiUrl = (endpoint) => {
-  return `${getApiBaseUrl()}/${endpoint}`;
+  const baseUrl = getApiBaseUrl();
+  // Make sure we don't have double slashes when joining paths
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+  return `${baseUrl}/${cleanEndpoint}`;
 };
 
 /**
  * Make a GET request with proper URL handling
  * @param {string} endpoint - API endpoint (without leading slash or 'api/' prefix)
- * @param {Object} options - Additional fetch options
  * @returns {Promise<any>} Response data
  */
-export const apiGet = async (endpoint, options = {}) => {
-  const url = `${getApiBaseUrl()}/${endpoint}`;
-  console.log(`[API] GET request to: ${url}`);
+export const apiGet = async (endpoint) => {
+  const url = getApiUrl(endpoint);
+  console.log(`[API] Making GET request to: ${url}`);
   
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      ...options
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
-      throw new Error(errorData.error || `Request failed with status: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`API error (GET ${endpoint}):`, error);
-    throw error;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+  return response.json();
 };
 
 /**
  * Make a POST request with proper URL handling
  * @param {string} endpoint - API endpoint (without leading slash or 'api/' prefix)
- * @param {Object} data - Request body data
- * @param {Object} options - Additional fetch options
+ * @param {Object} body - Request body data
  * @returns {Promise<any>} Response data
  */
-export const apiPost = async (endpoint, data, options = {}) => {
-  const url = `${getApiBaseUrl()}/${endpoint}`;
-  console.log(`[API] POST request to: ${url}`);
+export const apiPost = async (endpoint, body) => {
+  const url = getApiUrl(endpoint.replace(/^\/+/, ''));
+  
+  console.log(`[API] Making POST request to: ${url}`);
   
   try {
     const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      body: JSON.stringify(data),
-      ...options
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
     
     if (!response.ok) {
@@ -72,9 +64,9 @@ export const apiPost = async (endpoint, data, options = {}) => {
       throw new Error(errorData.error || `Request failed with status: ${response.status}`);
     }
     
-    return await response.json();
+    return response.json();
   } catch (error) {
-    console.error(`API error (POST ${endpoint}):`, error);
+    console.error(`API error (${endpoint}):`, error);
     throw error;
   }
 };
@@ -87,7 +79,7 @@ export const apiPost = async (endpoint, data, options = {}) => {
  * @returns {Promise<any>} Response data
  */
 export const apiPut = async (endpoint, data, options = {}) => {
-  const url = `${getApiBaseUrl()}/${endpoint}`;
+  const url = getApiUrl(endpoint);
   console.log(`[API] PUT request to: ${url}`);
   
   try {
@@ -117,7 +109,7 @@ export const apiPut = async (endpoint, data, options = {}) => {
  * @returns {Promise<any>} Response data
  */
 export const apiDelete = async (endpoint, options = {}) => {
-  const url = `${getApiBaseUrl()}/${endpoint}`;
+  const url = getApiUrl(endpoint);
   console.log(`[API] DELETE request to: ${url}`);
   
   try {

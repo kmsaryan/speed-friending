@@ -79,6 +79,28 @@ class AdminApiService {
   }
   
   /**
+   * Reset the game round to 1
+   */
+  static async resetRound() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reset-round`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
+        throw new Error(error.error || 'Failed to reset round');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error resetting round:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Data management methods
    */
   static async clearDatabase() {
@@ -131,6 +153,156 @@ class AdminApiService {
       return await apiGet(`teams/${round}`);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get teams for a specific round
+   */
+  static async getTeams(round = 2) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/teams/${round}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch teams: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get battles for a specific round
+   */
+  static async getBattles(round = 2) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/team-battles/${round}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch battles: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching battles:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get all players
+   */
+  static async getPlayers() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/players`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch players: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get matches for a specific round
+   */
+  static async getMatches(round = 1) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/matches?round=${round}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch matches: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * End a specific match
+   */
+  static async endMatch(matchId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/end-match/${matchId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to end match: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error ending match:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Delete a player
+   */
+  static async deletePlayer(playerId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/players/${playerId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
+        throw new Error(error.error || `Failed to delete player: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error deleting player:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update a player
+   */
+  static async updatePlayer(playerId, playerData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/players/${playerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(playerData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: `Failed with status: ${response.status}` }));
+        throw new Error(error.error || `Failed to update player: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error updating player:', error);
       throw error;
     }
   }
