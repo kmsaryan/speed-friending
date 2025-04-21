@@ -1,144 +1,172 @@
-import React from 'react';
-import '../styles/Dashboard.css';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { apiGet } from '../../utils/apiUtils';
 import AdminApiService from '../services/AdminApiService';
+import '../styles/Dashboard.css';
+import socket from '../../utils/socket';
 
-function Dashboard({ playerStats, ratings, round, gameStatus, onStatusChange, onRoundChange, onRefresh, onMessage }) {
-  const COLORS = ['#0088FE', '#00C49F'];
+function Dashboard({ 
+  playerStats, 
+  ratings, 
+  round, 
+  gameStatus, 
+  onStatusChange, 
+  onRoundChange, 
+  onRefresh, 
+  onMessage,
+  onTeamBattlesClick 
+}) {
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const playerTypeData = [
-    { name: 'Stationary', value: playerStats.stationary },
-    { name: 'Moving', value: playerStats.moving }
-  ];
+  useEffect(() => {
+    fetchMatches();
+    
+    // Listen for match updates
+    socket.on('match_created', fetchMatches);
+    socket.on('match_updated', fetchMatches);
+    socket.on('match_ended', fetchMatches);
 
-  const averageRatings = [
-    { name: 'Enjoyment', average: ratings.length ? ratings.reduce((acc, r) => acc + r.enjoyment, 0) / ratings.length : 0 },
-    { name: 'Depth', average: ratings.length ? ratings.reduce((acc, r) => acc + r.depth, 0) / ratings.length : 0 }
-  ];
+    return () => {
+      socket.off('match_created', fetchMatches);
+      socket.off('match_updated', fetchMatches);
+      socket.off('match_ended', fetchMatches);
+    };
+  }, [round]);
 
-  const handleStartGame = async () => {
+  // Explicitly define fetchMatches function
+  const fetchMatches = async () => {
     try {
-      await AdminApiService.startGame(round);
-      onStatusChange('running');
-      onMessage('Game started successfully!');
+      setLoading(true);
+      const matchData = await apiGet(`admin/matches?round=${round}`);
+      setMatches(matchData || []);
+      setLoading(false);
     } catch (error) {
-      console.error('Error starting game:', error);
-      onMessage(error.message || 'Failed to start game.');
+      console.error('Error fetching matches:', error);
+      setLoading(false);
     }
   };
 
-  const handleStopGame = async () => {
+  const handleRefresh = async () => {
     try {
-      await AdminApiService.stopGame();
-      onStatusChange('stopped');
-      onMessage('Game stopped successfully!');
+      setLoading(true);
+      await onRefresh();
+      await fetchMatches();
+      setLoading(false);
+      onMessage('Dashboard refreshed successfully');
     } catch (error) {
-      console.error('Error stopping game:', error);
-      onMessage(error.message || 'Failed to stop game.');
+      console.error('Error refreshing dashboard:', error);
+      onMessage('Failed to refresh dashboard');
+      setLoading(false);
     }
   };
 
-  const handleNextRound = async () => {
+  const handleGameAction = async (action) => {
     try {
-      await AdminApiService.nextRound();
-      onRoundChange(round + 1);
-      onMessage(`Advanced to round ${round + 1}!`);
+      setLoading(true);
+      if (action === 'start') {
+        await AdminApiService.startGame(round);
+        onStatusChange('running');
+        onMessage('Game started successfully');
+      } else if (action === 'stop') {
+        await AdminApiService.stopGame();
+        onStatusChange('stopped');
+        onMessage('Game stopped successfully');
+      } else if (action === 'next') {
+        const response = await AdminApiService.nextRound();
+        onRoundChange(response.round);
+        onMessage(`Advanced to round ${response.round}`);
+      }
+      setLoading(false);
     } catch (error) {
-      console.error('Error advancing round:', error);
-      onMessage(error.message || 'Failed to advance to next round.');
-    }
-  };
-
-  const handleFormTeams = async () => {
-    try {
-      const { teams } = await AdminApiService.formTeams(round);
-      onMessage(`${teams.length} teams formed successfully!`);
-    } catch (error) {
-      console.error('Error forming teams:', error);
-      onMessage(error.message || 'Failed to form teams.');
+      console.error(`Error with game action ${action}:`, error);
+      onMessage(`Failed to ${action} game: ${error.message}`);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="admin-section">
-      <h2>Dashboard</h2>
+    <div className="admin-dashboard-container">
+      <div className="dashboard-header">
+        <h2>Speed Friending Dashboard</h2>
+        <button onClick={handleRefresh} className="refresh-button" disabled={loading}>
+          {loading ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </div>
       
-      <div className="stat-cards">
-        <div className="stat-card">
-          <div className="stat-value">{playerStats.total}</div>
-          <div className="stat-label">Total Players</div>
+      <div className="dashboard-stats">
+        <div className="stat-box">
+          <span className="stat-value">{playerStats.total || 0}</span>
+          <span className="stat-label">Total Players</span>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{playerStats.stationary}</div>
-          <div className="stat-label">Stationary Players</div>
+        <div className="stat-box">
+          <span className="stat-value">{playerStats.matched || 0}</span>
+          <span className="stat-label">In Matches</span>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{playerStats.moving}</div>
-          <div className="stat-label">Moving Players</div>
+        <div className="stat-box">
+          <span className="stat-value">{playerStats.available || 0}</span>
+          <span className="stat-label">Available</span>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{playerStats.matched}</div>
-          <div className="stat-label">Currently Matched</div>
+        <div className="stat-box">
+          <span className="stat-value">{matches.length || 0}</span>
+          <span className="stat-label">Matches</span>
         </div>
       </div>
       
-      <div className="charts-container">
-        <div className="chart-card">
-          <h3>Player Distribution</h3>
-          <PieChart width={300} height={200}>
-            <Pie
-              data={playerTypeData}
-              cx={150}
-              cy={100}
-              labelLine={false}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-              label={({ name, value }) => `${name}: ${value}`}
+      <div className="game-controls">
+        <div className="control-group">
+          <h3>Game Status: <span className={gameStatus}>{gameStatus}</span></h3>
+          <div className="buttons">
+            <button 
+              onClick={() => handleGameAction('start')} 
+              disabled={gameStatus === 'running' || loading}
+              className="start-button"
             >
-              {playerTypeData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
+              Start Game
+            </button>
+            <button 
+              onClick={() => handleGameAction('stop')} 
+              disabled={gameStatus === 'stopped' || loading}
+              className="stop-button"
+            >
+              Stop Game
+            </button>
+          </div>
         </div>
-        <div className="chart-card">
-          <h3>Average Ratings</h3>
-          <BarChart width={300} height={200} data={averageRatings}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis domain={[0, 5]} />
-            <Tooltip />
-            <Bar dataKey="average" fill="#66FCF1" />
-          </BarChart>
+        
+        <div className="control-group">
+          <h3>Current Round: <span className="round">{round}</span></h3>
+          <div className="buttons">
+            <button 
+              onClick={() => handleGameAction('next')} 
+              disabled={gameStatus !== 'running' || loading}
+              className="next-button"
+            >
+              Next Round
+            </button>
+            <button 
+              onClick={onTeamBattlesClick} 
+              disabled={loading}
+              className="teams-button"
+            >
+              Team Battles
+            </button>
+          </div>
         </div>
       </div>
       
-      <div className="quick-actions">
-        <h3>Quick Actions</h3>
-        <div className="action-buttons">
-          <button 
-            className={`game-button ${gameStatus === 'running' ? 'stop' : 'start'}`}
-            onClick={gameStatus === 'running' ? handleStopGame : handleStartGame}
-          >
-            {gameStatus === 'running' ? 'Stop Game' : 'Start Game'}
-          </button>
-          <button className="next-round-button" onClick={handleNextRound}>
-            Next Round
-          </button>
-          <button className="teams-button" onClick={handleFormTeams}>
-            Form Teams
-          </button>
-          <button 
-            className="battle-button" 
-            onClick={() => window.location.href = `/team-battles/${round}`}
-          >
-            Start Team Battles
-          </button>
-          <button className="refresh-button" onClick={onRefresh}>
-            Refresh Data
-          </button>
+      <div className="quick-stats">
+        <div className="quick-stat-item">
+          <h3>Player Distribution</h3>
+          <div className="player-types">
+            <div className="player-type">
+              <span className="type-label">Stationary</span>
+              <span className="type-value">{playerStats.stationary || 0}</span>
+            </div>
+            <div className="player-type">
+              <span className="type-label">Moving</span>
+              <span className="type-value">{playerStats.moving || 0}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

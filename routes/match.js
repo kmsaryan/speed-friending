@@ -11,6 +11,21 @@ db.all("PRAGMA table_info(players)", (err, rows) => {
   }
 });
 
+// Add function to increment interaction counts for both players
+function incrementInteractionCount(player1Id, player2Id) {
+  db.run(
+    'UPDATE players SET interaction_count = COALESCE(interaction_count, 0) + 1 WHERE id IN (?, ?)',
+    [player1Id, player2Id],
+    (err) => {
+      if (err) {
+        console.error(`Error updating interaction counts: ${err.message}`);
+      } else {
+        console.log(`Interaction counts incremented for players ${player1Id} and ${player2Id}`);
+      }
+    }
+  );
+}
+
 router.get('/match/:playerType', (req, res) => {
   const playerType = req.params.playerType;
   console.log(`Matching request for player type: ${playerType}`);
@@ -52,8 +67,12 @@ router.get('/match/:playerType', (req, res) => {
         db.run(
           'INSERT INTO matches (player_id, matched_player_id, round) VALUES (?, ?, ?)',
           [req.query.playerId, row.id, 1],
-          (err) => {
+          function(err) {
             if (err) return res.status(500).send(err.message);
+            
+            // Increment interaction count when match is created
+            incrementInteractionCount(req.query.playerId, row.id);
+            
             res.status(200).send(row);
           }
         );

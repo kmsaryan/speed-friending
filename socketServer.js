@@ -60,6 +60,9 @@ const initializeSocketServer = (server) => {
       origin: process.env.FRONTEND_URL || "http://localhost:3000",
       methods: ["GET", "POST"],
     },
+    transports: ['websocket', 'polling'], // Explicitly define allowed transports
+    allowUpgrades: true,
+    upgradeTimeout: 10000,
   });
 
   // Make io available globally for broadcasts from routes

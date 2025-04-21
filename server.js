@@ -42,12 +42,27 @@ const matchRoutes = require('./routes/match');
 const ratingsRoutes = require('./routes/ratings');
 const teamsRoutes = require('./routes/teams');
 const battlesRoutes = require('./routes/battles'); 
+const teamBattlesRoutes = require('./routes/teamBattles');
 const playerCountRoutes = require('./routes/playerCount');
 const adminRoutes = require('./routes/admin');
 
-// Print available routes in admin (for debugging)
+// Print available routes for debugging
 console.log('Available admin routes:');
 adminRoutes.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(`Route: ${r.route.path}`);
+  }
+});
+
+console.log('Available battle routes:');
+battlesRoutes.stack.forEach(r => {
+  if (r.route && r.route.path) {
+    console.log(`Route: ${r.route.path}`);
+  }
+});
+
+console.log('Available team battle routes:');
+teamBattlesRoutes.stack.forEach(r => {
   if (r.route && r.route.path) {
     console.log(`Route: ${r.route.path}`);
   }
@@ -59,6 +74,7 @@ app.use('/api', matchRoutes);
 app.use('/api', ratingsRoutes);
 app.use('/api', teamsRoutes);
 app.use('/api', battlesRoutes); 
+app.use('/api', teamBattlesRoutes);
 app.use('/api', playerCountRoutes);
 app.use('/api', adminRoutes);
 

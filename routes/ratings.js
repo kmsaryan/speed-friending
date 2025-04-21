@@ -56,6 +56,9 @@ router.post('/rate', (req, res) => {
 
         console.log(`[RATING]: Rating submitted: Player ${playerId} rated ${ratedPlayerId}`);
         
+        // Note: We don't increment interaction count here as that's done when a match is created
+        // to prevent double-counting
+        
         // Check if status column exists in players table
         db.all("PRAGMA table_info(players)", (err, columns) => {
           if (err) {
@@ -67,40 +70,57 @@ router.post('/rate', (req, res) => {
           
           // Update player status to available if the column exists
           if (hasStatusColumn) {
-            db.run('UPDATE players SET status = ? WHERE id = ?', ['available', playerId], function(err) {
+            // Clear transaction with IMMEDIATE to avoid locking issues
+            db.run('BEGIN IMMEDIATE TRANSACTION', function(err) {
               if (err) {
-                console.error(`[RATING]: Error updating player status after rating: ${err.message}`);
-                return res.status(200).json({ message: 'Rating submitted successfully, but player status not updated' });
+                console.error(`[RATING]: Error beginning transaction: ${err.message}`);
+                return res.status(200).json({ message: 'Rating submitted but status update failed' });
               }
               
-              console.log(`[RATING]: Player ${playerId} status updated to available after rating submission`);
-              
-              // If Socket.IO is initialized, broadcast player status change
-              if (global.io) {
-                global.io.emit('player_status_updated');
-                console.log('[RATING]: Broadcasted player_status_updated event');
-                
-                // Also notify any waiting players that new matches might be available
-                global.io.emit('new_players_available');
-                console.log('[RATING]: Broadcasted new_players_available event');
-              }
-              
-              // Also update the matching record to mark it as rated
-              db.run(
-                `UPDATE matches SET rated = 1 WHERE 
-                (player_id = ? AND matched_player_id = ?) OR 
-                (player_id = ? AND matched_player_id = ?)`,
-                [playerId, ratedPlayerId, ratedPlayerId, playerId],
-                function(err) {
-                  if (err) {
-                    console.error(`[RATING]: Error updating match rated status: ${err.message}`);
-                  }
+              // Make player available again
+              db.run('UPDATE players SET status = ? WHERE id = ?', ['available', playerId], function(err) {
+                if (err) {
+                  console.error(`[RATING]: Error updating player status: ${err.message}`);
+                  db.run('ROLLBACK');
+                  return res.status(200).json({ message: 'Rating submitted but status update failed' });
                 }
-              );
-              
-              res.status(200).json({ 
-                message: 'Rating submitted successfully and player status updated',
-                success: true
+                
+                // Also mark the match as rated
+                db.run(
+                  `UPDATE matches SET rated = 1 WHERE 
+                   (player_id = ? AND matched_player_id = ?) OR 
+                   (player_id = ? AND matched_player_id = ?)`,
+                  [playerId, ratedPlayerId, ratedPlayerId, playerId],
+                  function(err) {
+                    if (err) {
+                      console.error(`[RATING]: Error updating match rated status: ${err.message}`);
+                      db.run('ROLLBACK');
+                      return res.status(200).json({ message: 'Rating submitted but match update failed' });
+                    }
+                    
+                    db.run('COMMIT', function(err) {
+                      if (err) {
+                        console.error(`[RATING]: Error committing transaction: ${err.message}`);
+                        db.run('ROLLBACK');
+                        return res.status(200).json({ message: 'Rating submitted but transaction failed' });
+                      }
+                      
+                      // Notify everyone about player availability
+                      if (global.io) {
+                        global.io.emit('player_status_updated');
+                        console.log('[RATING]: Broadcasted player_status_updated event');
+                        
+                        global.io.emit('new_players_available');
+                        console.log('[RATING]: Broadcasted new_players_available event');
+                      }
+                      
+                      res.status(200).json({
+                        message: 'Rating submitted successfully and player status updated',
+                        success: true
+                      });
+                    });
+                  }
+                );
               });
             });
           } else {

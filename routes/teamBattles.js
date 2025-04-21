@@ -58,6 +58,43 @@ router.get('/battle/:teamId', (req, res) => {
   );
 });
 
+// Get all battles for a specific round
+router.get('/team-battles/:round', (req, res) => {
+  const round = parseInt(req.params.round, 10) || 1;
+  
+  console.log(`[TEAM BATTLES]: Fetching battles for round ${round}`);
+  
+  try {
+    db.all(
+      `SELECT b.id, b.team1_id, b.team2_id, b.battle_type, b.winner_id, b.status,
+              t1.compatibility_score AS team1_score, t2.compatibility_score AS team2_score,
+              p1.name AS team1_player1_name, p2.name AS team1_player2_name,
+              p3.name AS team2_player1_name, p4.name AS team2_player2_name
+       FROM team_battles b
+       JOIN teams t1 ON b.team1_id = t1.id
+       JOIN teams t2 ON b.team2_id = t2.id
+       JOIN players p1 ON t1.player1_id = p1.id
+       JOIN players p2 ON t1.player2_id = p2.id
+       JOIN players p3 ON t2.player1_id = p3.id
+       JOIN players p4 ON t2.player2_id = p4.id
+       WHERE b.round = ?
+       ORDER BY b.id`,
+      [round],
+      (err, battles) => {
+        if (err) {
+          console.error('[TEAM BATTLES]: Error fetching team battles:', err.message);
+          return res.status(500).json({ error: 'Database error', message: err.message });
+        }
+        
+        res.status(200).json({ battles: battles || [] });
+      }
+    );
+  } catch (error) {
+    console.error('[TEAM BATTLES]: Unexpected error:', error.message);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
+
 // Broadcast battle results
 router.post('/battle-result', (req, res) => {
   const { battleId, winnerId } = req.body;

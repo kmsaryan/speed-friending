@@ -12,7 +12,7 @@ const serverUrl = getWebSocketURL();
 console.log(`[SOCKET LOG]: Connecting to WebSocket server at ${serverUrl}`);
 
 const socket = io(serverUrl, {
-  transports: ["websocket"],
+  transports: ["websocket", "polling"], // Added polling as fallback
   reconnection: true,
   reconnectionAttempts: 10,
   timeout: 20000,

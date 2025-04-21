@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { getApiUrl, apiGet } from '../../utils/apiUtils'; // Ensure this is imported
 import '../styles/LiveMatchTable.css';
 import socket from '../../utils/socket';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 function LiveMatchTable() {
   const [players, setPlayers] = useState([]);
@@ -9,18 +11,23 @@ function LiveMatchTable() {
   const [error, setError] = useState('');
   const [currentRound, setCurrentRound] = useState(1);
 
+  // Move fetchMatches outside useEffect to component scope so it can be accessed by fetchData
+  const fetchMatches = async () => {
+    try {
+      const response = await apiGet(`admin/matches?round=${currentRound}`);
+      setMatches(response);
+    } catch (error) {
+      console.error('[API]: Error fetching matches:', error.message);
+      setError('Failed to load matches. Please try again.');
+    }
+  };
+
   useEffect(() => {
     fetchData();
     
     // Listen for player status updates
     socket.on('player_status_updated', () => {
       console.log('Player status changed, refreshing data...');
-      fetchData();
-    });
-    
-    // Listen for new matches
-    socket.on('match_created', () => {
-      console.log('New match created, refreshing data...');
       fetchData();
     });
     
@@ -34,8 +41,20 @@ function LiveMatchTable() {
     
     return () => {
       socket.off('player_status_updated');
-      socket.off('match_created');
       socket.off('game_status_change');
+    };
+  }, [currentRound]);
+
+  useEffect(() => {
+    // Use the fetchMatches function defined at component level
+    fetchMatches();
+    
+    socket.on('match_created', fetchMatches);
+    socket.on('match_updated', fetchMatches);
+
+    return () => {
+      socket.off('match_created', fetchMatches);
+      socket.off('match_updated', fetchMatches);
     };
   }, [currentRound]);
   
@@ -53,8 +72,7 @@ function LiveMatchTable() {
   
   const fetchPlayers = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/players`);
+      const response = await fetch(getApiUrl('admin/players'));
       
       if (!response.ok) {
         console.error(`Error response fetching players: ${response.status} ${response.statusText}`);
@@ -67,26 +85,6 @@ function LiveMatchTable() {
     } catch (error) {
       console.error('Error fetching players:', error);
       setError(`Failed to load players: ${error.message}`);
-      throw error;
-    }
-  };
-  
-  const fetchMatches = async () => {
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/matches?round=${currentRound}`);
-      
-      if (!response.ok) {
-        console.error(`Error response fetching matches: ${response.status} ${response.statusText}`);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setMatches(data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      setError(`Failed to load matches: ${error.message}`);
       throw error;
     }
   };
@@ -114,8 +112,7 @@ function LiveMatchTable() {
     }
     
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/end-match/${matchId}`, {
+      const response = await fetch(getApiUrl(`admin/end-match/${matchId}`), {
         method: 'POST',
       });
       
@@ -133,8 +130,7 @@ function LiveMatchTable() {
   // Handle manual player matching
   const handleCreateMatch = async (player1Id, player2Id) => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await fetch(`${backendUrl}/api/admin/create-match`, {
+      const response = await fetch(getApiUrl('admin/create-match'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player1Id, player2Id, round: currentRound }),
@@ -155,10 +151,7 @@ function LiveMatchTable() {
     return (
       <div className="admin-section">
         <h2>Live Match Tracking</h2>
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading match data...</p>
-        </div>
+        <LoadingSpinner message="Loading match data..." />
       </div>
     );
   }

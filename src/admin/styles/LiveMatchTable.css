@@ -21,6 +21,9 @@
   border-collapse: collapse;
   background-color: var(--dark-accent);
   color: var(--gray);
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: 8px;
 }
 
 .live-match-table th, 
@@ -146,6 +149,141 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.round-selector {
+  display: flex;
+  align-items: center;
+}
+
+.round-selector label {
+  margin-right: 10px;
+  color: var(--gray-light);
+}
+
+.round-selector select {
+  padding: 8px 12px;
+  background-color: var(--dark-bg);
+  color: white;
+  border: 1px solid var(--teal-dark);
+  border-radius: 4px;
+}
+
+.refresh-button {
+  padding: 8px 16px;
+  background-color: var(--teal-dark);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.refresh-button:hover {
+  background-color: var(--teal-light);
+}
+
+.live-matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.match-card {
+  background-color: rgba(40, 44, 52, 0.7);
+  border: 1px solid var(--teal-dark);
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.match-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.match-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.match-id {
+  color: var(--teal-light);
+  font-weight: bold;
+}
+
+.match-players {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.player {
+  flex: 1;
+  text-align: center;
+}
+
+.vs {
+  padding: 0 10px;
+  color: var(--warning);
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.player-type {
+  color: var(--gray-light);
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.player-name {
+  font-weight: bold;
+  color: white;
+}
+
+.match-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.end-match-button {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.end-match-button:hover {
+  background-color: #c82333;
+}
+
+.no-matches {
+  text-align: center;
+  padding: 30px;
+  color: var(--gray);
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+/* Add animation for newly created matches */
+@keyframes newMatch {
+  from { background-color: rgba(102, 252, 241, 0.3); }
+  to { background-color: rgba(40, 44, 52, 0.7); }
+}
+
+.match-card.new-match {
+  animation: newMatch 2s ease-out;
 }
 
 @keyframes spin {

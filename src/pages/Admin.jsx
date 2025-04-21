@@ -8,7 +8,10 @@ import PlayerStats from '../admin/components/PlayerStats';
 import RatingsDashboard from '../admin/components/RatingsDashboard';
 import DataManagement from '../admin/components/DataManagement';
 import LiveMatchTable from '../admin/components/LiveMatchTable';
-
+import PlayerManagement from '../admin/components/PlayerManagement';
+import TeamBattleAdmin from '../admin/components/TeamBattleAdmin';
+import MatchManagement from '../admin/components/MatchManagement';
+import TeamBattleLanding from '../admin/components/TeamBattleLanding';
 // Import API Service
 import AdminApiService from '../admin/services/AdminApiService';
 
@@ -26,7 +29,14 @@ function Admin() {
   const [ratings, setRatings] = useState([]);
   const [gameStatus, setGameStatus] = useState('stopped');
   const [round, setRound] = useState(1);
+  const [teamBattlesRound, setTeamBattlesRound] = useState(1);
+  const [matchView, setMatchView] = useState('current'); // For match history view
   
+  // Function to change active tab
+  const changeTab = (tabName) => {
+    setActiveTab(tabName);
+  };
+
   // Fetch player stats when logged in
   useEffect(() => {
     if (isLoggedIn) {
@@ -66,6 +76,28 @@ function Admin() {
     }
   };
 
+  const handleLogin = async (username, password) => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      if (response.ok) {
+        setIsLoggedIn(true);
+        setMessage('Login successful');
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.error || 'Login failed.');
+      }
+    } catch (error) {
+      console.error('Error during admin login:', error);
+      setMessage('An error occurred. Please check your connection and try again.');
+    }
+  };
+
   // If not logged in, show login form
   if (!isLoggedIn) {
     return <AdminAuth onLogin={setIsLoggedIn} onMessage={setMessage} />;
@@ -92,7 +124,28 @@ function Admin() {
             className={activeTab === 'live-matches' ? 'active' : ''} 
             onClick={() => setActiveTab('live-matches')}
           >
-            Live Matching
+            Match Management
+          </li>
+          <li 
+            className={activeTab === 'match-history' ? 'active' : ''} 
+            onClick={() => setActiveTab('match-history')}
+          >
+            Match History
+          </li>
+          <li 
+            className={activeTab === 'team-battles-dashboard' ? 'active' : ''} 
+            onClick={() => setActiveTab('team-battles-dashboard')}
+          >
+            Team Battle Dashboard
+          </li>
+          <li 
+            className={activeTab === 'team-battles' ? 'active' : ''} 
+            onClick={() => {
+              setActiveTab('team-battles');
+              setTeamBattlesRound(round); // Use current round for team battles
+            }}
+          >
+            Manage Team Battles
           </li>
           <li 
             className={activeTab === 'player-stats' ? 'active' : ''} 
@@ -111,6 +164,12 @@ function Admin() {
             onClick={() => setActiveTab('data-management')}
           >
             Data Management
+          </li>
+          <li 
+            className={activeTab === 'player-management' ? 'active' : ''} 
+            onClick={() => setActiveTab('player-management')}
+          >
+            Player Management
           </li>
         </ul>
       </div>
@@ -139,6 +198,10 @@ function Admin() {
             onRoundChange={setRound}
             onRefresh={fetchData}
             onMessage={setMessage}
+            onTeamBattlesClick={() => {
+              setActiveTab('team-battles');
+              setTeamBattlesRound(round);
+            }}
           />
         )}
 
@@ -149,11 +212,37 @@ function Admin() {
             onStatusChange={setGameStatus}
             onRoundChange={setRound}
             onMessage={setMessage}
+            onTabChange={changeTab}
           />
         )}
         
         {activeTab === 'live-matches' && (
           <LiveMatchTable />
+        )}
+
+        {activeTab === 'match-history' && (
+          <div className="admin-section">
+            <h2>Player Match History</h2>
+            <MatchManagement 
+              initialRound={round}
+              onMessage={setMessage}
+            />
+          </div>
+        )}
+
+        {activeTab === 'team-battles-dashboard' && (
+          <TeamBattleLanding 
+            round={round}
+            onMessage={setMessage}
+          />
+        )}
+
+        {activeTab === 'team-battles' && (
+          <TeamBattleAdmin 
+            round={teamBattlesRound}
+            onMessage={setMessage}
+            onBack={() => setActiveTab('team-battles-dashboard')}
+          />
         )}
 
         {activeTab === 'player-stats' && (
@@ -175,6 +264,10 @@ function Admin() {
             onRefresh={fetchData}
             onMessage={setMessage}
           />
+        )}
+
+        {activeTab === 'player-management' && (
+          <PlayerManagement />
         )}
       </div>
     </div>
