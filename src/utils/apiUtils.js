@@ -4,17 +4,20 @@
 
 // Helper function to determine the base API URL
 export const getApiBaseUrl = () => {
-  // When running on a single port (production or built app)
-  // we should use relative URLs for API requests
-  if (process.env.NODE_ENV === 'production' || 
-      window.location.hostname !== 'localhost' || 
-      window.location.port === '5000') {
-    // Use relative URL in production or single-port configuration
+  // Check if running in production
+  if (process.env.NODE_ENV === 'production') {
+    // Use relative URL for production (assumes API is served from the same domain)
     return '/api';
   }
-  
-  // Use the environment variable in development, fallback to localhost:5000
-  return `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api`;
+
+  // Check if running on Render deployment
+  if (window.location.hostname.includes('onrender.com')) {
+    // Use the Render deployment hostname
+    return `${window.location.origin}/api`;
+  }
+
+  // Default to development environment
+  return process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000/api';
 };
 
 // Export this function explicitly to fix the build error

@@ -53,15 +53,24 @@ function Admin() {
   
   const fetchData = async () => {
     try {
+      console.log('[Admin] Fetching game status...');
       const gameStatus = await AdminApiService.getGameStatus();
       setGameStatus(gameStatus.status);
       setRound(gameStatus.round);
-      console.log('[Admin] Game status:', gameStatus);
-      await fetchPlayerStats();
-      await fetchRatings();
+      console.log('[Admin] Game status fetched:', gameStatus);
+
+      console.log('[Admin] Fetching player stats...');
+      const stats = await AdminApiService.getPlayerStats();
+      setPlayerStats(stats);
+      console.log('[Admin] Player stats fetched:', stats);
+
+      console.log('[Admin] Fetching ratings...');
+      const ratingsData = await AdminApiService.getRatings();
+      setRatings(ratingsData);
+      console.log('[Admin] Ratings fetched:', ratingsData);
     } catch (error) {
       console.error('[Admin] Error fetching data:', error);
-      setMessage('Error fetching data. Please try again.');
+      setMessage('Error fetching data. Please check your connection and try again.');
     }
   };
   
