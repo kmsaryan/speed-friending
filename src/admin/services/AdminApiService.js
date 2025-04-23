@@ -9,10 +9,12 @@ class AdminApiService {
    */
   static async getGameStatus() {
     try {
-      // Replace direct fetch with apiGet utility function
-      return await apiGet('admin/game-status');
+      console.log('[AdminApiService] Fetching game status...');
+      const response = await apiGet('admin/game-status');
+      console.log('[AdminApiService] Game status fetched:', response);
+      return response;
     } catch (error) {
-      console.error('Error getting game status:', error);
+      console.error('[AdminApiService] Error fetching game status:', error);
       return { status: 'stopped', round: 1 }; // Default fallback on error
     }
   }

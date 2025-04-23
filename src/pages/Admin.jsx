@@ -42,18 +42,25 @@ function Admin() {
   // Fetch player stats when logged in
   useEffect(() => {
     if (isLoggedIn) {
-      console.log('[Admin] Fetching data after login...'); // Add logging
+      console.log('[Admin] Fetching data after login...');
       setLoading(true);
-      fetchData().finally(() => setLoading(false));
+      fetchData()
+        .then(() => console.log('[Admin] Data fetched successfully'))
+        .catch((error) => console.error('[Admin] Error fetching data:', error))
+        .finally(() => setLoading(false));
     }
   }, [isLoggedIn]);
   
   const fetchData = async () => {
     try {
+      const gameStatus = await AdminApiService.getGameStatus();
+      setGameStatus(gameStatus.status);
+      setRound(gameStatus.round);
+      console.log('[Admin] Game status:', gameStatus);
       await fetchPlayerStats();
       await fetchRatings();
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('[Admin] Error fetching data:', error);
       setMessage('Error fetching data. Please try again.');
     }
   };
@@ -115,6 +122,15 @@ function Admin() {
 
   if (loading) {
     return <LoadingSpinner message="Loading admin dashboard..." />;
+  }
+
+  if (gameStatus === 'stopped') {
+    return (
+      <div className="admin-dashboard">
+        <h1>Game is currently stopped</h1>
+        <p>Please start the game from the Game Control tab.</p>
+      </div>
+    );
   }
 
   // If not logged in, show login form

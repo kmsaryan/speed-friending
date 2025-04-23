@@ -388,14 +388,13 @@ process.on('SIGTERM', () => {
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception:', err);
-  
-  // Close database connection and exit
-  if (db) {
-    db.close();
-  }
-  
+  console.error('[SERVER]: Uncaught exception:', err);
+  if (db) db.close();
   process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[SERVER]: Unhandled rejection at:', promise, 'reason:', reason);
 });
 
 const PORT = process.env.PORT || 5000;
