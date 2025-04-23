@@ -1,6 +1,4 @@
-import { getApiUrl, apiGet, apiPost } from '../../utils/apiUtils';
-
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+import { getApiUrl, apiGet, apiPost, getApiBaseUrl } from '../../utils/apiUtils'; // Ensure getApiBaseUrl is imported
 
 /**
  * Service to handle all admin API requests
@@ -85,7 +83,7 @@ class AdminApiService {
    */
   static async resetRound() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/reset-round`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/admin/reset-round`, { // Use getApiBaseUrl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -126,24 +124,59 @@ class AdminApiService {
    */
   static async getPlayers() {
     try {
-      return await apiGet('admin/players');
+      const url = `${getApiBaseUrl()}/admin/players`; // Use getApiBaseUrl
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch players: ${response.status}`);
+      }
+      
+      return response.json();
     } catch (error) {
       console.error('[AdminApiService] Error fetching players:', error); // Add detailed logging
-      return [];
+      throw error;
     }
   }
 
   static async getMatches(round) {
     try {
-      return await apiGet(`admin/matches?round=${round}`);
+      const url = `${getApiBaseUrl()}/admin/matches?round=${round}`; // Use getApiBaseUrl
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch matches: ${response.status}`);
+      }
+      
+      return response.json();
     } catch (error) {
       console.error('[AdminApiService] Error fetching matches:', error); // Add detailed logging
-      return [];
+      throw error;
     }
   }
 
   static async endMatch(matchId) {
-    return apiPost(`admin/end-match/${matchId}`, {});
+    try {
+      const url = `${getApiBaseUrl()}/api/admin/end-match/${matchId}`; // Use getApiBaseUrl
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to end match: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('[AdminApiService] Error ending match:', error); // Add detailed logging
+      throw error;
+    }
   }
 
   static async createMatch(player1Id, player2Id, round = 1) {
@@ -152,19 +185,8 @@ class AdminApiService {
 
   static async getTeams(round) {
     try {
-      return await apiGet(`teams/${round}`);
-    } catch (error) {
-      console.error('[AdminApiService] Error fetching teams:', error); // Add detailed logging
-      throw error;
-    }
-  }
-  
-  /**
-   * Get teams for a specific round
-   */
-  static async getTeams(round = 2) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/teams/${round}`, {
+      const url = `${getApiBaseUrl()}/teams/${round}`; // Use getApiBaseUrl
+      const response = await fetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -185,7 +207,8 @@ class AdminApiService {
    */
   static async getBattles(round = 2) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/team-battles/${round}`, {
+      const url = `${getApiBaseUrl()}/team-battles/${round}`; // Use getApiBaseUrl
+      const response = await fetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -202,74 +225,12 @@ class AdminApiService {
   }
   
   /**
-   * Get all players
-   */
-  static async getPlayers() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/players`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch players: ${response.status}`);
-      }
-      
-      return response.json();
-    } catch (error) {
-      console.error('[AdminApiService] Error fetching players:', error); // Add detailed logging
-      throw error;
-    }
-  }
-  
-  /**
-   * Get matches for a specific round
-   */
-  static async getMatches(round = 1) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/matches?round=${round}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch matches: ${response.status}`);
-      }
-      
-      return response.json();
-    } catch (error) {
-      console.error('[AdminApiService] Error fetching matches:', error); // Add detailed logging
-      throw error;
-    }
-  }
-  
-  /**
-   * End a specific match
-   */
-  static async endMatch(matchId) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/end-match/${matchId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to end match: ${response.status}`);
-      }
-      
-      return response.json();
-    } catch (error) {
-      console.error('[AdminApiService] Error ending match:', error); // Add detailed logging
-      throw error;
-    }
-  }
-  
-  /**
    * Delete a player
    */
   static async deletePlayer(playerId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/players/${playerId}`, {
+      const url = `${getApiBaseUrl()}/api/admin/players/${playerId}`; // Use getApiBaseUrl
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -291,7 +252,8 @@ class AdminApiService {
    */
   static async updatePlayer(playerId, playerData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/players/${playerId}`, {
+      const url = `${getApiBaseUrl()}/api/admin/players/${playerId}`; // Use getApiBaseUrl
+      const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerData)
