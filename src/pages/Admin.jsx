@@ -42,11 +42,11 @@ function Admin() {
   // Fetch player stats when logged in
   useEffect(() => {
     if (isLoggedIn) {
-      console.log('[Admin] Fetching data after login...');
+      console.log('[Admin] User is logged in. Fetching data...');
       setLoading(true);
       fetchData()
         .then(() => console.log('[Admin] Data fetched successfully'))
-        .catch((error) => console.error('[Admin] Error fetching data:', error))
+        .catch((error) => console.error('[Admin] Error during data fetch:', error))
         .finally(() => setLoading(false));
     }
   }, [isLoggedIn]);
@@ -55,19 +55,19 @@ function Admin() {
     try {
       console.log('[Admin] Fetching game status...');
       const gameStatus = await AdminApiService.getGameStatus();
+      console.log('[Admin] Game status:', gameStatus);
       setGameStatus(gameStatus.status);
       setRound(gameStatus.round);
-      console.log('[Admin] Game status fetched:', gameStatus);
 
       console.log('[Admin] Fetching player stats...');
       const stats = await AdminApiService.getPlayerStats();
+      console.log('[Admin] Player stats:', stats);
       setPlayerStats(stats);
-      console.log('[Admin] Player stats fetched:', stats);
 
       console.log('[Admin] Fetching ratings...');
       const ratingsData = await AdminApiService.getRatings();
+      console.log('[Admin] Ratings:', ratingsData);
       setRatings(ratingsData);
-      console.log('[Admin] Ratings fetched:', ratingsData);
     } catch (error) {
       console.error('[Admin] Error fetching data:', error);
       setMessage('Error fetching data. Please check your connection and try again.');

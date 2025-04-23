@@ -58,6 +58,18 @@ socket.on("chat_message", (message) => {
   console.log(`[SOCKET EVENT]: Chat message received`, message);
 });
 
+socket.on("game_status_change", (data) => {
+  console.log('[SOCKET EVENT]: Game status change:', data);
+});
+
+socket.on("player_updated", (data) => {
+  console.log('[SOCKET EVENT]: Player updated:', data);
+});
+
+socket.on("player_deleted", (data) => {
+  console.log('[SOCKET EVENT]: Player deleted:', data);
+});
+
 // Wrap emit to log outgoing messages
 const originalEmit = socket.emit;
 socket.emit = function (event, ...args) {
